@@ -28,7 +28,14 @@ export class Lexer {
 
         switch (this.ch) {
             case '=':
-                tok = { Type: TokenEnum.ASSIGN, Literal: this.ch };
+                if (this.peekChar() == '=') {
+                    const ch = this.ch;
+                    this.readChar();
+                    const literal = ch + this.ch;
+                    tok = { Type: TokenEnum.EQ, Literal: literal };
+                } else {
+                    tok = { Type: TokenEnum.ASSIGN, Literal: this.ch };
+                }
                 break;
             case ';':
                 tok = { Type: TokenEnum.SEMICOLON, Literal: this.ch };
@@ -49,7 +56,14 @@ export class Lexer {
                 tok = { Type: TokenEnum.MINUS, Literal: this.ch };
                 break;
             case '!':
-                tok = { Type: TokenEnum.BANG, Literal: this.ch };
+                if (this.peekChar() == '=') {
+                    const ch = this.ch;
+                    this.readChar();
+                    const literal = ch + this.ch;
+                    tok = { Type: TokenEnum.NOT_EQ, Literal: literal };
+                } else {
+                    tok = { Type: TokenEnum.BANG, Literal: this.ch };
+                }
                 break;
             case '/':
                 tok = { Type: TokenEnum.SLASH, Literal: this.ch };
@@ -88,6 +102,14 @@ export class Lexer {
 
         this.readChar();
         return tok;
+    }
+
+    peekChar(): string {
+        if (this.readPosition >= this.input.length) {
+            return '\0';
+        } else {
+            return this.input[this.readPosition];
+        }
     }
 
     readIdentifier(): string {

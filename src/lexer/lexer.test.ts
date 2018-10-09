@@ -78,7 +78,6 @@ test('next tokens', () => {
     tests.forEach((tt) => {
         const tok: Token = l.nextToken();
         expect(tok.Type).toBe(tt.expectedType);
-        console.log(`expected: ${tok.Literal} and got ${tt.expectedLiteral}`);
         expect(tok.Literal).toBe(tt.expectedLiteral);
     });
 });
@@ -109,7 +108,6 @@ test('operators', () => {
     tests.forEach((tt) => {
         const tok: Token = l.nextToken();
         expect(tok.Type).toBe(tt.expectedType);
-        console.log(`expected: ${tok.Literal} and got ${tt.expectedLiteral}`);
         expect(tok.Literal).toBe(tt.expectedLiteral);
     });
 });
@@ -147,7 +145,32 @@ test('if condition', () => {
     tests.forEach((tt) => {
         const tok: Token = l.nextToken();
         expect(tok.Type).toBe(tt.expectedType);
-        console.log(`expected: ${tok.Literal} and got ${tt.expectedLiteral}`);
         expect(tok.Literal).toBe(tt.expectedLiteral);
     });
 });
+
+test('comparing values', () => {
+    const input = `
+    10 == 10;
+    10 != 9;
+    `
+
+    const tests = [
+        { expectedType: TokenEnum.INT, expectedLiteral: '10' },
+        { expectedType: TokenEnum.EQ, expectedLiteral: '==' },
+        { expectedType: TokenEnum.INT, expectedLiteral: '10' },
+        { expectedType: TokenEnum.SEMICOLON, expectedLiteral: ';' },
+        { expectedType: TokenEnum.INT, expectedLiteral: '10' },
+        { expectedType: TokenEnum.NOT_EQ, expectedLiteral: '!=' },
+        { expectedType: TokenEnum.INT, expectedLiteral: '9' },
+        { expectedType: TokenEnum.SEMICOLON, expectedLiteral: ';' },
+        { expectedType: TokenEnum.EOF, expectedLiteral: '' },
+    ];
+
+    const l = new Lexer(input);
+    tests.forEach((tt) => {
+        const tok: Token = l.nextToken();
+        expect(tok.Type).toBe(tt.expectedType);
+        expect(tok.Literal).toBe(tt.expectedLiteral);
+    });
+})

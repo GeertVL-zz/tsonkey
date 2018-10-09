@@ -44,7 +44,10 @@ export enum TokenEnum {
     FALSE = "FALSE",
     IF = "IF",
     ELSE = "ELSE",
-    RETURN = "RETURN"
+    RETURN = "RETURN",
+
+    EQ = "==",
+    NOT_EQ = "!="
 }
 
 export const keywords: HashSet<TokenEnum> = {};
