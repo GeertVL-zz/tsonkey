@@ -82,3 +82,72 @@ test('next tokens', () => {
         expect(tok.Literal).toBe(tt.expectedLiteral);
     });
 });
+
+test('operators', () => {
+    const input = `
+        !-/+5;
+        5 < 10 > 5;
+    `;    
+    
+    const tests = [
+        { expectedType: TokenEnum.BANG, expectedLiteral: '!' },
+        { expectedType: TokenEnum.MINUS, expectedLiteral: '-' },
+        { expectedType: TokenEnum.SLASH, expectedLiteral: '/' },
+        { expectedType: TokenEnum.PLUS, expectedLiteral: '+' },
+        { expectedType: TokenEnum.INT, expectedLiteral: '5' },
+        { expectedType: TokenEnum.SEMICOLON, expectedLiteral: ';' },
+        { expectedType: TokenEnum.INT, expectedLiteral: '5' },
+        { expectedType: TokenEnum.LT, expectedLiteral: '<' },
+        { expectedType: TokenEnum.INT, expectedLiteral: '10' },
+        { expectedType: TokenEnum.GT, expectedLiteral: '>' },
+        { expectedType: TokenEnum.INT, expectedLiteral: '5' },
+        { expectedType: TokenEnum.SEMICOLON, expectedLiteral: ';' },
+        { expectedType: TokenEnum.EOF, expectedLiteral: '' },
+    ];
+
+    const l = new Lexer(input);
+    tests.forEach((tt) => {
+        const tok: Token = l.nextToken();
+        expect(tok.Type).toBe(tt.expectedType);
+        console.log(`expected: ${tok.Literal} and got ${tt.expectedLiteral}`);
+        expect(tok.Literal).toBe(tt.expectedLiteral);
+    });
+});
+
+test('if condition', () => {
+    const input = `
+    if (5 < 10) {
+        return true;
+    } else {
+        return false;
+    }`
+
+    const tests = [
+        { expectedType: TokenEnum.IF, expectedLiteral: 'if' },
+        { expectedType: TokenEnum.LPAREN, expectedLiteral: '(' },
+        { expectedType: TokenEnum.INT, expectedLiteral: '5' },
+        { expectedType: TokenEnum.LT, expectedLiteral: '<' },
+        { expectedType: TokenEnum.INT, expectedLiteral: '10' },
+        { expectedType: TokenEnum.RPAREN, expectedLiteral: ')' },
+        { expectedType: TokenEnum.LBRACE, expectedLiteral: '{' },
+        { expectedType: TokenEnum.RETURN, expectedLiteral: 'return' },
+        { expectedType: TokenEnum.TRUE, expectedLiteral: 'true' },
+        { expectedType: TokenEnum.SEMICOLON, expectedLiteral: ';' },
+        { expectedType: TokenEnum.RBRACE, expectedLiteral: '}' },
+        { expectedType: TokenEnum.ELSE, expectedLiteral: 'else' },
+        { expectedType: TokenEnum.LBRACE, expectedLiteral: '{' },
+        { expectedType: TokenEnum.RETURN, expectedLiteral: 'return' },
+        { expectedType: TokenEnum.FALSE, expectedLiteral: 'false' },
+        { expectedType: TokenEnum.SEMICOLON, expectedLiteral: ';' },
+        { expectedType: TokenEnum.RBRACE, expectedLiteral: '}' },
+        { expectedType: TokenEnum.EOF, expectedLiteral: '' },
+    ];
+
+    const l = new Lexer(input);
+    tests.forEach((tt) => {
+        const tok: Token = l.nextToken();
+        expect(tok.Type).toBe(tt.expectedType);
+        console.log(`expected: ${tok.Literal} and got ${tt.expectedLiteral}`);
+        expect(tok.Literal).toBe(tt.expectedLiteral);
+    });
+});

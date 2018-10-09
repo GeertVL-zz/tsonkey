@@ -20,6 +20,13 @@ export enum TokenEnum {
     // operators
     ASSIGN = "ASSIGN",
     PLUS = "PLUS",
+    MINUS = "MINUS",
+    BANG = "!",
+    ASTERISK = "*",
+    SLASH = "/",
+
+    LT = "<",
+    GT = ">",
 
     // delimiters
     COMMA = "COMMA",
@@ -33,15 +40,23 @@ export enum TokenEnum {
     // keywords
     FUNCTION = "FUNCTION",
     LET = "LET",
+    TRUE = "TRUE",
+    FALSE = "FALSE",
+    IF = "IF",
+    ELSE = "ELSE",
+    RETURN = "RETURN"
 }
 
 export const keywords: HashSet<TokenEnum> = {};
 keywords['fn'] = TokenEnum.FUNCTION;
 keywords['let'] = TokenEnum.LET;
+keywords['true'] = TokenEnum.TRUE;
+keywords['false'] = TokenEnum.FALSE;
+keywords['if'] = TokenEnum.IF;
+keywords['else'] = TokenEnum.ELSE;
+keywords['return'] = TokenEnum.RETURN;
 
 export function lookUpIdent(ident: string): TokenEnum {
-    // console.log(`lookup ${ident}`);
-    // console.log(`keywords ${keywords[ident]}`);
     if (keywords[ident] != undefined) {
         return keywords[ident];
     }

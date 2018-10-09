@@ -45,6 +45,24 @@ export class Lexer {
             case '+':
                 tok = { Type: TokenEnum.PLUS, Literal: this.ch };
                 break;        
+            case '-':
+                tok = { Type: TokenEnum.MINUS, Literal: this.ch };
+                break;
+            case '!':
+                tok = { Type: TokenEnum.BANG, Literal: this.ch };
+                break;
+            case '/':
+                tok = { Type: TokenEnum.SLASH, Literal: this.ch };
+                break;
+            case '*': 
+                tok = { Type: TokenEnum.ASTERISK, Literal: this.ch };
+                break;
+            case '<': 
+                tok = { Type: TokenEnum.LT, Literal: this.ch };
+                break;
+            case '>':
+                tok = { Type: TokenEnum.GT, Literal: this.ch };
+                break;                    
             case '{':
                 tok = { Type: TokenEnum.LBRACE, Literal: this.ch };
                 break;
