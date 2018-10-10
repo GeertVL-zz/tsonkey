@@ -1,6 +1,6 @@
 import { Lexer } from "../lexer/lexer";
 import { Parser } from "./parser";
-import { Statement, LetStatement, ReturnStatement } from "../ast/ast";
+import { Statement, LetStatement, ReturnStatement, ExpressionStatement, Identifier } from "../ast/ast";
 
 test('let statements', () => {
     const input = `
@@ -48,6 +48,23 @@ test('return statements', () => {
         expect(returnStmt.tokenLiteral()).toBe('return');
     });
 });
+
+test('identifier expression', () => {
+    const input = 'foobar;';
+
+    const l = new Lexer(input);
+    const p = new Parser(l);
+    const program = p.parseProgram();
+    checkParserErrors(p);
+
+    expect(program.statements.length).toBe(1);
+    expect(program.statements[0]).toBeInstanceOf(ExpressionStatement);
+    let stmt = <ExpressionStatement>program.statements[0];
+    expect(stmt.expression).toBeInstanceOf(Identifier);
+    let ident = <Identifier>stmt.expression;
+    expect(ident.value).toBe('foobar');
+    expect(ident.tokenLiteral()).toBe('foobar');
+})
 
 function testLetStatement(s: Statement, name: string): void {
     expect(s.tokenLiteral()).toBe('let');
