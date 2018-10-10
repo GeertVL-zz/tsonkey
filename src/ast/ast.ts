@@ -132,3 +132,26 @@ export class IntegerLiteral implements Expression {
         return this.token.Literal;
     }
 }
+
+export class PrefixExpression implements Expression {
+    token: Token;
+    operator: string;
+    right: Expression;
+
+    expressionNode() {}
+
+    tokenLiteral(): string {
+        return this.token.Literal;
+    }
+
+    string(): string {
+        let out: string = '';
+
+        out = out + '(';
+        out = out + this.operator;
+        out = out + this.right.string();
+        out = out + ')';
+
+        return out;
+    }
+}

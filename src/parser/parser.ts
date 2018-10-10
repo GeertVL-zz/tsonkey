@@ -8,12 +8,13 @@ import {
     ReturnStatement, 
     Expression, 
     ExpressionStatement, 
-    IntegerLiteral
+    IntegerLiteral,
+    PrefixExpression
 } from "../ast/ast";
 import { AssertionError } from "assert";
 
-type PrefixParseFn = (Parser) => Expression;
-type InfixParseFn = (Parser, Expression) => Expression;
+type PrefixParseFn = (p: Parser) => Expression;
+type InfixParseFn = (p: Parser, e: Expression) => Expression;
 
 enum PrecedenceEnum {
     LOWEST,
@@ -38,6 +39,8 @@ export class Parser {
 
         this.registerPrefix(TokenEnum.IDENT, this.parseIdentifier);
         this.registerPrefix(TokenEnum.INT, this.parseIntegerLiteral);
+        this.registerPrefix(TokenEnum.BANG, this.parsePrefixExpression);
+        this.registerPrefix(TokenEnum.MINUS, this.parsePrefixExpression);
 
         this.nextToken();
         this.nextToken();
@@ -121,9 +124,9 @@ export class Parser {
     parseExpression(precedence: PrecedenceEnum): Expression {
         const prefix = this.prefixParseFns[this.curToken.Type];
         if (prefix == null) {
+            this.noPrefixParseFnError(this.curToken.Type);
             return null;
         }
-
         const leftExp = prefix(this);
 
         return leftExp;
@@ -141,6 +144,17 @@ export class Parser {
         return new Identifier(p.curToken, p.curToken.Literal);
     }
 
+    parsePrefixExpression(p: Parser): Expression {
+        const expression = new PrefixExpression();
+        expression.token = p.curToken;
+        expression.operator = p.curToken.Literal;
+
+        p.nextToken();
+
+        expression.right = p.parseExpression(PrecedenceEnum.PREFIX);
+
+        return expression;
+    }
 
     // helpers
 
@@ -173,5 +187,10 @@ export class Parser {
 
     registerInfix(tokenType: TokenEnum, fn: InfixParseFn): void {
         this.infixParseFns[tokenType] = fn;
+    }
+
+    noPrefixParseFnError(t: TokenEnum): void {
+        const msg = `no prefix parse function for ${t} found`;
+        this.errors.push(msg);
     }
 }

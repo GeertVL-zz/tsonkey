@@ -1,6 +1,6 @@
 import { Lexer } from "../lexer/lexer";
 import { Parser } from "./parser";
-import { Statement, LetStatement, ReturnStatement, ExpressionStatement, Identifier, IntegerLiteral } from "../ast/ast";
+import { Statement, LetStatement, ReturnStatement, ExpressionStatement, Identifier, IntegerLiteral, Expression, PrefixExpression } from "../ast/ast";
 
 test('let statements', () => {
     const input = `
@@ -83,12 +83,43 @@ test('integer literal expressions', () => {
     expect(literal.tokenLiteral()).toBe('5');
 });
 
+test('parsing prefix expressions', () => {
+    const prefixTests = [
+        { input: '!5;', operator: '!', integerValue: 5 },
+        { input: '-15;', operator: '-', integerValue: 15 }
+    ];
+
+    prefixTests.forEach((tt) => {
+        const l = new Lexer(tt.input);
+        const p = new Parser(l);
+        const program = p.parseProgram();
+        checkParserErrors(p);
+
+        expect(program.statements.length).toBe(1);
+        expect(program.statements[0]).toBeInstanceOf(ExpressionStatement);
+        const stmt = <ExpressionStatement>program.statements[0];
+        expect(stmt.expression).toBeInstanceOf(PrefixExpression);
+        const exp = <PrefixExpression>stmt.expression;
+        expect(exp.operator).toBe(tt.operator);
+        testIntegerLiteral(exp.right, tt.integerValue);
+    });
+});
+
+// helpers
+
 function testLetStatement(s: Statement, name: string): void {
     expect(s.tokenLiteral()).toBe('let');
     expect(s).toBeInstanceOf(LetStatement);
     const letStat: LetStatement = s as LetStatement;
     expect(letStat.name.value).toBe(name);
     expect(letStat.name.tokenLiteral()).toBe(name);
+}
+
+function testIntegerLiteral(il: Expression, value: number): void {
+    expect(il).toBeInstanceOf(IntegerLiteral);
+    const integ = <IntegerLiteral>il;
+    expect(integ.value).toBe(value);
+    expect(integ.tokenLiteral()).toBe(String(value));
 }
 
 function checkParserErrors(p: Parser) {
