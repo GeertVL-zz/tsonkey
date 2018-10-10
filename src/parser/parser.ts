@@ -7,8 +7,10 @@ import {
     Identifier, 
     ReturnStatement, 
     Expression, 
-    ExpressionStatement 
+    ExpressionStatement, 
+    IntegerLiteral
 } from "../ast/ast";
+import { AssertionError } from "assert";
 
 type PrefixParseFn = (Parser) => Expression;
 type InfixParseFn = (Parser, Expression) => Expression;
@@ -34,7 +36,8 @@ export class Parser {
     constructor(lexer: Lexer) {
         this.lexer = lexer;
 
-        this.prefixParseFns[TokenEnum.IDENT] = this.parseIdentifier;
+        this.registerPrefix(TokenEnum.IDENT, this.parseIdentifier);
+        this.registerPrefix(TokenEnum.INT, this.parseIntegerLiteral);
 
         this.nextToken();
         this.nextToken();
@@ -126,9 +129,20 @@ export class Parser {
         return leftExp;
     }
 
+    parseIntegerLiteral(p: Parser): Expression {
+        const lit = new IntegerLiteral();
+        lit.token = p.curToken;
+        lit.value = parseInt(p.curToken.Literal);
+
+        return lit;
+    }
+
     parseIdentifier(p: Parser): Expression {
         return new Identifier(p.curToken, p.curToken.Literal);
     }
+
+
+    // helpers
 
     curTokenIs(t: TokenEnum): boolean {
         return this.curToken.Type == t;

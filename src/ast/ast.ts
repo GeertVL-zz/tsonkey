@@ -117,3 +117,18 @@ export class ExpressionStatement implements Statement {
         return '';
     }
 }
+
+export class IntegerLiteral implements Expression {
+    token: Token;
+    value: number;
+
+    expressionNode() {}
+
+    tokenLiteral(): string {
+        return this.token.Literal;
+    }
+
+    string(): string {
+        return this.token.Literal;
+    }
+}
