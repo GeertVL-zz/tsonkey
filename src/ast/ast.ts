@@ -155,3 +155,28 @@ export class PrefixExpression implements Expression {
         return out;
     }
 }
+
+export class InfixExpression implements Expression {
+    token: Token;
+    left: Expression;
+    operator: string;
+    right?: Expression;
+
+    expressionNode() {}
+
+    tokenLiteral(): string {
+        return this.token.Literal;
+    }
+
+    string(): string {
+        let out: string = '';
+
+        out = out + '(';
+        out = out + this.left.string();
+        out = out + ` ${this.operator} `;
+        out = out + this.right.string();
+        out = out + ')';
+
+        return out;
+    }
+}

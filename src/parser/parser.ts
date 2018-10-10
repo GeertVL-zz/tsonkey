@@ -1,5 +1,5 @@
 import { Lexer } from "../lexer/lexer";
-import { Token, TokenEnum, HashSet } from "../token/token";
+import { Token, TokenEnum } from "../token/token";
 import { 
     Program, 
     Statement, 
@@ -9,9 +9,9 @@ import {
     Expression, 
     ExpressionStatement, 
     IntegerLiteral,
-    PrefixExpression
+    PrefixExpression,
+    InfixExpression
 } from "../ast/ast";
-import { AssertionError } from "assert";
 
 type PrefixParseFn = (p: Parser) => Expression;
 type InfixParseFn = (p: Parser, e: Expression) => Expression;
@@ -26,13 +26,26 @@ enum PrecedenceEnum {
     CALL
 }
 
+const precedences: Map<string, PrecedenceEnum> 
+    = new Map(
+        [
+            [TokenEnum.EQ, PrecedenceEnum.EQUALS],
+            [TokenEnum.NOT_EQ, PrecedenceEnum.EQUALS],
+            [TokenEnum.LT, PrecedenceEnum.LESSGREATER],
+            [TokenEnum.GT, PrecedenceEnum.LESSGREATER],
+            [TokenEnum.PLUS, PrecedenceEnum.SUM],
+            [TokenEnum.MINUS, PrecedenceEnum.SUM],
+            [TokenEnum.SLASH, PrecedenceEnum.PRODUCT],
+            [TokenEnum.ASTERISK, PrecedenceEnum.PRODUCT]
+        ]);
+
 export class Parser {
     lexer: Lexer;
     curToken: Token;
     peekToken: Token;
     errors: string[] = [];
-    prefixParseFns: HashSet<PrefixParseFn> = {};
-    infixParseFns: HashSet<InfixParseFn> = {};
+    prefixParseFns: Map<TokenEnum, PrefixParseFn> = new Map();
+    infixParseFns: Map<TokenEnum, InfixParseFn> = new Map();
 
     constructor(lexer: Lexer) {
         this.lexer = lexer;
@@ -41,6 +54,15 @@ export class Parser {
         this.registerPrefix(TokenEnum.INT, this.parseIntegerLiteral);
         this.registerPrefix(TokenEnum.BANG, this.parsePrefixExpression);
         this.registerPrefix(TokenEnum.MINUS, this.parsePrefixExpression);
+
+        this.registerInfix(TokenEnum.PLUS, this.parseInfixExpression);
+        this.registerInfix(TokenEnum.MINUS, this.parseInfixExpression);
+        this.registerInfix(TokenEnum.SLASH, this.parseInfixExpression);
+        this.registerInfix(TokenEnum.ASTERISK, this.parseInfixExpression);
+        this.registerInfix(TokenEnum.EQ, this.parseInfixExpression);
+        this.registerInfix(TokenEnum.NOT_EQ, this.parseInfixExpression);
+        this.registerInfix(TokenEnum.LT, this.parseInfixExpression);
+        this.registerInfix(TokenEnum.GT, this.parseInfixExpression);
 
         this.nextToken();
         this.nextToken();
@@ -122,12 +144,23 @@ export class Parser {
     }
 
     parseExpression(precedence: PrecedenceEnum): Expression {
-        const prefix = this.prefixParseFns[this.curToken.Type];
+        const prefix = this.prefixParseFns.get(this.curToken.Type);
         if (prefix == null) {
             this.noPrefixParseFnError(this.curToken.Type);
             return null;
         }
-        const leftExp = prefix(this);
+        let leftExp = prefix(this);
+
+        while (!this.peekTokenIs(TokenEnum.SEMICOLON) && precedence < this.peekPrecedence()) {
+            const infix = this.infixParseFns.get(this.peekToken.Type);
+            if (infix == null) {
+                return leftExp;
+            }
+
+            this.nextToken();
+
+            leftExp = infix(this, leftExp);
+        }
 
         return leftExp;
     }
@@ -152,6 +185,19 @@ export class Parser {
         p.nextToken();
 
         expression.right = p.parseExpression(PrecedenceEnum.PREFIX);
+
+        return expression;
+    }
+
+    parseInfixExpression(p: Parser, e: Expression): Expression {
+        const expression = new InfixExpression();
+        expression.token = p.curToken;
+        expression.operator = p.curToken.Literal;
+        expression.left = e;
+
+        const precedence = p.curPrecedence();
+        p.nextToken();
+        expression.right = p.parseExpression(precedence);
 
         return expression;
     }
@@ -182,15 +228,33 @@ export class Parser {
     }
 
     registerPrefix(tokenType: TokenEnum, fn: PrefixParseFn): void {
-        this.prefixParseFns[tokenType] = fn;
+        this.prefixParseFns.set(tokenType, fn);
     }
 
     registerInfix(tokenType: TokenEnum, fn: InfixParseFn): void {
-        this.infixParseFns[tokenType] = fn;
+        this.infixParseFns.set(tokenType, fn);
     }
 
     noPrefixParseFnError(t: TokenEnum): void {
         const msg = `no prefix parse function for ${t} found`;
         this.errors.push(msg);
+    }
+
+    peekPrecedence(): number {
+        const p = precedences.get(this.peekToken.Type);
+        if (p == null) {
+            return PrecedenceEnum.LOWEST;
+        }
+
+        return p;
+    }
+
+    curPrecedence(): number {
+        const p = precedences.get(this.curToken.Type);
+        if (p == null) {
+            return PrecedenceEnum.LOWEST;
+        }
+
+        return p;
     }
 }

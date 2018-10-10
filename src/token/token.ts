@@ -1,9 +1,3 @@
-type TokenType = string;
-
-export interface HashSet<T> {
-    [key: string]: T;
-}
-
 export interface Token {
     Type?: TokenEnum;
     Literal?: string;
@@ -50,18 +44,21 @@ export enum TokenEnum {
     NOT_EQ = "!="
 }
 
-export const keywords: HashSet<TokenEnum> = {};
-keywords['fn'] = TokenEnum.FUNCTION;
-keywords['let'] = TokenEnum.LET;
-keywords['true'] = TokenEnum.TRUE;
-keywords['false'] = TokenEnum.FALSE;
-keywords['if'] = TokenEnum.IF;
-keywords['else'] = TokenEnum.ELSE;
-keywords['return'] = TokenEnum.RETURN;
+export const keywords: Map<string, TokenEnum> = new Map(
+    [
+        ['fn', TokenEnum.FUNCTION],
+        ['let', TokenEnum.LET],
+        ['true', TokenEnum.TRUE],
+        ['false', TokenEnum.FALSE],
+        ['if', TokenEnum.IF],
+        ['else', TokenEnum.ELSE],
+        ['return', TokenEnum.RETURN]
+    ]
+);
 
 export function lookUpIdent(ident: string): TokenEnum {
-    if (keywords[ident] != undefined) {
-        return keywords[ident];
+    if (this.keywords.get(ident) != undefined) {
+        return this.keywords.get(ident);
     }
 
     return TokenEnum.IDENT;
