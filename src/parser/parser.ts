@@ -1,11 +1,12 @@
 import { Lexer } from "../lexer/lexer";
 import { Token, TokenEnum } from "../token/token";
-import { Program, Statement, LetStatement, Identifier } from "../ast/ast";
+import { Program, Statement, LetStatement, Identifier, ReturnStatement } from "../ast/ast";
 
 export class Parser {
     lexer: Lexer;
     curToken: Token;
     peekToken: Token;
+    errors: string[] = [];
 
     constructor(lexer: Lexer) {
         this.lexer = lexer;
@@ -37,6 +38,8 @@ export class Parser {
         switch (this.curToken.Type) {
             case TokenEnum.LET:
                 return this.parseLetStatement();
+            case TokenEnum.RETURN:
+                return this.parseReturnStatement();    
             default:
                 return null;
         }
@@ -45,7 +48,7 @@ export class Parser {
     parseLetStatement(): LetStatement {
         const stmt = new LetStatement();
         stmt.token = this.curToken;
-        
+
         if (!this.expectPeek(TokenEnum.IDENT)) {
             return null;
         }
@@ -55,6 +58,18 @@ export class Parser {
         if (!this.expectPeek(TokenEnum.ASSIGN)) {
             return null;
         }
+
+        while (!this.curTokenIs(TokenEnum.SEMICOLON)) {
+            this.nextToken();
+        }
+
+        return stmt;
+    }
+
+    parseReturnStatement(): ReturnStatement {
+        const stmt = new ReturnStatement(this.curToken);
+
+        this.nextToken();
 
         while (!this.curTokenIs(TokenEnum.SEMICOLON)) {
             this.nextToken();
@@ -76,7 +91,13 @@ export class Parser {
             this.nextToken();
             return true;
         } else {
+            this.peekError(t);
             return false;
         }
+    }
+
+    peekError(t: TokenEnum) {
+        const msg = `expected next token to be ${t}, got ${this.peekToken.Type} instead`;
+        this.errors.push(msg);
     }
 }
