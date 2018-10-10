@@ -180,3 +180,18 @@ export class InfixExpression implements Expression {
         return out;
     }
 }
+
+export class Bool implements Expression {
+    token: Token;
+    value: boolean;
+
+    expressionNode() {}
+    
+    tokenLiteral(): string {
+        return this.token.Literal;
+    }
+
+    string(): string {
+        return this.token.Literal;
+    }
+}

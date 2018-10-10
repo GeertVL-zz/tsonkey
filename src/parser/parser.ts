@@ -10,7 +10,8 @@ import {
     ExpressionStatement, 
     IntegerLiteral,
     PrefixExpression,
-    InfixExpression
+    InfixExpression,
+    Bool
 } from "../ast/ast";
 
 type PrefixParseFn = (p: Parser) => Expression;
@@ -54,6 +55,8 @@ export class Parser {
         this.registerPrefix(TokenEnum.INT, this.parseIntegerLiteral);
         this.registerPrefix(TokenEnum.BANG, this.parsePrefixExpression);
         this.registerPrefix(TokenEnum.MINUS, this.parsePrefixExpression);
+        this.registerPrefix(TokenEnum.TRUE, this.parseBoolean);
+        this.registerPrefix(TokenEnum.FALSE, this.parseBoolean);
 
         this.registerInfix(TokenEnum.PLUS, this.parseInfixExpression);
         this.registerInfix(TokenEnum.MINUS, this.parseInfixExpression);
@@ -200,6 +203,14 @@ export class Parser {
         expression.right = p.parseExpression(precedence);
 
         return expression;
+    }
+
+    parseBoolean(p: Parser): Expression {
+        const bool = new Bool();
+        bool.token = p.curToken;
+        bool.value = p.curTokenIs(TokenEnum.TRUE);
+
+        return bool;
     }
 
     // helpers
