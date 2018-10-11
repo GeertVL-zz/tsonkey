@@ -1,6 +1,6 @@
 import { Lexer } from "../lexer/lexer";
 import { Parser } from "./parser";
-import { Statement, LetStatement, ReturnStatement, ExpressionStatement, Identifier, IntegerLiteral, Expression, PrefixExpression, InfixExpression, Bool, IfExpression } from "../ast/ast";
+import { Statement, LetStatement, ReturnStatement, ExpressionStatement, Identifier, IntegerLiteral, Expression, PrefixExpression, InfixExpression, Bool, IfExpression, FunctionLiteral } from "../ast/ast";
 
 test('let statements', () => {
     const tests = [
@@ -184,7 +184,54 @@ test('if expression', () => {
     const consequence = <ExpressionStatement>exp.consequence.statements[0];
     testIdentifier(consequence.expression, 'x');
     expect(exp.alternative).toBeNull();
-})
+});
+
+test('function literal parsing', () => {
+    const input = 'fn(x, y) { x + y; }';
+
+    const l = new Lexer(input);
+    const p = new Parser(l);
+    const program = p.parseProgram();
+    checkParserErrors(p);
+
+    expect(program.statements.length).toBe(1);
+    expect(program.statements[0]).toBeInstanceOf(ExpressionStatement);
+    const stmt = <ExpressionStatement>program.statements[0];
+    expect(stmt.expression).toBeInstanceOf(FunctionLiteral);
+    const funct = <FunctionLiteral>stmt.expression;
+    expect(funct.parameters.length).toBe(2);
+    testLiteralExpression(funct.parameters[0], 'x');
+    testLiteralExpression(funct.parameters[1], 'y');
+    expect(funct.body.statements.length).toBe(1);
+    expect(funct.body.statements[0]).toBeInstanceOf(ExpressionStatement);
+    const bodyStmt = <ExpressionStatement>funct.body.statements[0];
+    testInfixExpression(bodyStmt.expression, 'x', '+', 'y');
+});
+
+test('function parameter parsing', () => {
+    const tests = [
+        { input: 'fn() {};', expectedParams: [] },
+        { input: 'fn(x) {};', expectedParams: ['x'] },
+        { input: 'fn(x, y , z) {};', expectedParams: ['x', 'y', 'z'] }
+    ];
+
+    tests.forEach((tt) => {
+        const l = new Lexer(tt.input);
+        const p = new Parser(l);
+        const program = p.parseProgram();
+        checkParserErrors(p);
+
+        expect(program.statements[0]).toBeInstanceOf(ExpressionStatement);
+        const stmt = <ExpressionStatement>program.statements[0];
+        const funct = <FunctionLiteral>stmt.expression;
+
+        expect(funct.parameters.length).toBe(tt.expectedParams.length);
+
+        tt.expectedParams.forEach((ident, idx) => {
+            testLiteralExpression(funct.parameters[idx], ident);
+        });
+    })
+});
 
 
 // helpers

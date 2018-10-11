@@ -1,5 +1,5 @@
 import { Parser } from "./parser";
-import { Expression, IfExpression, IntegerLiteral, Identifier, PrefixExpression, InfixExpression, Bool } from "../ast/ast";
+import { Expression, IfExpression, IntegerLiteral, Identifier, PrefixExpression, InfixExpression, Bool, FunctionLiteral } from "../ast/ast";
 import { TokenEnum } from "../token/token";
 
 export enum PrecedenceEnum {
@@ -100,4 +100,23 @@ export function parseIfExpression(p: Parser): Expression {
     }
 
     return expression;
+}
+
+export function parseFunctionLiteral(p: Parser): Expression {
+    const lit = new FunctionLiteral();
+    lit.token = p.curToken;
+
+    if (!p.expectPeek(TokenEnum.LPAREN)) {
+        return null;
+    }
+
+    lit.parameters = p.parseFunctionParameters();
+
+    if (!p.expectPeek(TokenEnum.LBRACE)) {
+        return null;
+    }
+
+    lit.body = p.parseBlockStatement();
+
+    return lit;
 }

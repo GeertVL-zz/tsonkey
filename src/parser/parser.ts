@@ -53,6 +53,7 @@ export class Parser {
         this.registerPrefix(TokenEnum.FALSE, helper.parseBoolean);
         this.registerPrefix(TokenEnum.LPAREN, helper.parseGroupedExpression);
         this.registerPrefix(TokenEnum.IF, helper.parseIfExpression);
+        this.registerPrefix(TokenEnum.FUNCTION, helper.parseFunctionLiteral);
 
         this.registerInfix(TokenEnum.PLUS, helper.parseInfixExpression);
         this.registerInfix(TokenEnum.MINUS, helper.parseInfixExpression);
@@ -187,6 +188,33 @@ export class Parser {
         }
 
         return block;
+    }
+
+    parseFunctionParameters(): Identifier[] {
+        const identifiers: Identifier[] = [];
+
+        if (this.peekTokenIs(TokenEnum.RPAREN)) {
+            this.nextToken();
+            return identifiers;
+        }
+
+        this.nextToken();
+
+        const ident = new Identifier(this.curToken, this.curToken.Literal);
+        identifiers.push(ident);
+
+        while (this.peekTokenIs(TokenEnum.COMMA)) {
+            this.nextToken();
+            this.nextToken();
+            const ident = new Identifier(this.curToken, this.curToken.Literal);
+            identifiers.push(ident);
+        }
+
+        if (!this.expectPeek(TokenEnum.RPAREN)) {
+            return null;
+        }
+
+        return identifiers;
     }
 
     // helpers

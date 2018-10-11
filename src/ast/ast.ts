@@ -245,3 +245,32 @@ export class BlockStatement implements Statement {
         return out;
     }
 }
+
+export class FunctionLiteral implements Expression {
+    token: Token;
+    parameters: Identifier[];
+    body: BlockStatement;
+
+    expressionNode() {}
+
+    tokenLiteral(): string {
+        return this.token.Literal;
+    }
+
+    string(): string {
+        let out: string = '';
+
+        const params: string[] = [];
+        this.parameters.forEach((p) => {
+            params.push(p.string());
+        });
+
+        out = out + this.tokenLiteral();
+        out = out + '(';
+        out = out + params.join(', ');
+        out = out + ')';
+        out = out + this.body.string();
+
+        return out;
+    }
+}
