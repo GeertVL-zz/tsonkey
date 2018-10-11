@@ -57,6 +57,7 @@ export class Parser {
         this.registerPrefix(TokenEnum.MINUS, this.parsePrefixExpression);
         this.registerPrefix(TokenEnum.TRUE, this.parseBoolean);
         this.registerPrefix(TokenEnum.FALSE, this.parseBoolean);
+        this.registerPrefix(TokenEnum.LPAREN, this.parseGroupedExpression);
 
         this.registerInfix(TokenEnum.PLUS, this.parseInfixExpression);
         this.registerInfix(TokenEnum.MINUS, this.parseInfixExpression);
@@ -217,6 +218,17 @@ export class Parser {
         bool.value = p.curTokenIs(TokenEnum.TRUE);
 
         return bool;
+    }
+
+    parseGroupedExpression(p: Parser): Expression {
+        p.nextToken();
+        
+        const exp = p.parseExpression(PrecedenceEnum.LOWEST);
+        if (!p.expectPeek(TokenEnum.RPAREN)) {
+            return null;
+        }
+
+        return exp;
     }
 
     // helpers
