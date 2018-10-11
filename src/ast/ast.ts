@@ -195,3 +195,53 @@ export class Bool implements Expression {
         return this.token.Literal;
     }
 }
+
+export class IfExpression implements Expression {
+    token: Token;
+    condition: Expression;
+    consequence: BlockStatement;
+    alternative: BlockStatement = null;
+
+    expressionNode() {}
+
+    tokenLiteral(): string {
+        return this.token.Literal;
+    }
+
+    string(): string {
+        let out: string = '';
+
+        out = out + 'if';
+        out = out + this.condition.string();
+        out = out + ' ';
+        out = out + this.consequence.string();
+
+        if (this.alternative != null) {
+            out = out + 'else ';
+            out = out + this.alternative.string();
+        }
+
+        return out;
+    }
+}
+
+export class BlockStatement implements Statement {
+    token: Token;
+    statements: Statement[];
+
+    statementNode() {}
+
+    tokenLiteral(): string {
+        return this.token.Literal;
+    }
+
+    string(): string {
+        let out: string = '';
+
+        this.statements.forEach((s) => {
+            out = out + s.string();
+        });
+
+        return out;
+    }
+}

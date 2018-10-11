@@ -1,6 +1,6 @@
 import { Lexer } from "../lexer/lexer";
 import { Parser } from "./parser";
-import { Statement, LetStatement, ReturnStatement, ExpressionStatement, Identifier, IntegerLiteral, Expression, PrefixExpression, InfixExpression, Bool } from "../ast/ast";
+import { Statement, LetStatement, ReturnStatement, ExpressionStatement, Identifier, IntegerLiteral, Expression, PrefixExpression, InfixExpression, Bool, IfExpression } from "../ast/ast";
 
 test('let statements', () => {
     const tests = [
@@ -164,6 +164,27 @@ test('operator precedence parsing', () => {
         expect(program.string()).toBe(tt.expected);
     });
 });
+
+test('if expression', () => {
+    const input = 'if (x < y) { x }';
+
+    const l = new Lexer(input);
+    const p = new Parser(l);
+    const program = p.parseProgram();
+    checkParserErrors(p);
+
+    expect(program.statements.length).toBe(1);
+    expect(program.statements[0]).toBeInstanceOf(ExpressionStatement);
+    const stmt = <ExpressionStatement>program.statements[0];
+    expect(stmt.expression).toBeInstanceOf(IfExpression);
+    const exp = <IfExpression>stmt.expression;
+    testInfixExpression(exp.condition, 'x', '<', 'y');
+    expect(exp.consequence.statements.length).toBe(1);
+    expect(exp.consequence.statements[0]).toBeInstanceOf(ExpressionStatement);
+    const consequence = <ExpressionStatement>exp.consequence.statements[0];
+    testIdentifier(consequence.expression, 'x');
+    expect(exp.alternative).toBeNull();
+})
 
 
 // helpers

@@ -11,21 +11,15 @@ import {
     IntegerLiteral,
     PrefixExpression,
     InfixExpression,
-    Bool
+    Bool,
+    IfExpression,
+    BlockStatement
 } from "../ast/ast";
+import * as helper from "./parser-helper";
+import { PrecedenceEnum } from "./parser-helper";
 
 type PrefixParseFn = (p: Parser) => Expression;
 type InfixParseFn = (p: Parser, e: Expression) => Expression;
-
-enum PrecedenceEnum {
-    LOWEST,
-    EQUALS,
-    LESSGREATER,
-    SUM,
-    PRODUCT,
-    PREFIX,
-    CALL
-}
 
 const precedences: Map<string, PrecedenceEnum> 
     = new Map(
@@ -51,22 +45,23 @@ export class Parser {
     constructor(lexer: Lexer) {
         this.lexer = lexer;
 
-        this.registerPrefix(TokenEnum.IDENT, this.parseIdentifier);
-        this.registerPrefix(TokenEnum.INT, this.parseIntegerLiteral);
-        this.registerPrefix(TokenEnum.BANG, this.parsePrefixExpression);
-        this.registerPrefix(TokenEnum.MINUS, this.parsePrefixExpression);
-        this.registerPrefix(TokenEnum.TRUE, this.parseBoolean);
-        this.registerPrefix(TokenEnum.FALSE, this.parseBoolean);
-        this.registerPrefix(TokenEnum.LPAREN, this.parseGroupedExpression);
+        this.registerPrefix(TokenEnum.IDENT, helper.parseIdentifier);
+        this.registerPrefix(TokenEnum.INT, helper.parseIntegerLiteral);
+        this.registerPrefix(TokenEnum.BANG, helper.parsePrefixExpression);
+        this.registerPrefix(TokenEnum.MINUS, helper.parsePrefixExpression);
+        this.registerPrefix(TokenEnum.TRUE, helper.parseBoolean);
+        this.registerPrefix(TokenEnum.FALSE, helper.parseBoolean);
+        this.registerPrefix(TokenEnum.LPAREN, helper.parseGroupedExpression);
+        this.registerPrefix(TokenEnum.IF, helper.parseIfExpression);
 
-        this.registerInfix(TokenEnum.PLUS, this.parseInfixExpression);
-        this.registerInfix(TokenEnum.MINUS, this.parseInfixExpression);
-        this.registerInfix(TokenEnum.SLASH, this.parseInfixExpression);
-        this.registerInfix(TokenEnum.ASTERISK, this.parseInfixExpression);
-        this.registerInfix(TokenEnum.EQ, this.parseInfixExpression);
-        this.registerInfix(TokenEnum.NOT_EQ, this.parseInfixExpression);
-        this.registerInfix(TokenEnum.LT, this.parseInfixExpression);
-        this.registerInfix(TokenEnum.GT, this.parseInfixExpression);
+        this.registerInfix(TokenEnum.PLUS, helper.parseInfixExpression);
+        this.registerInfix(TokenEnum.MINUS, helper.parseInfixExpression);
+        this.registerInfix(TokenEnum.SLASH, helper.parseInfixExpression);
+        this.registerInfix(TokenEnum.ASTERISK, helper.parseInfixExpression);
+        this.registerInfix(TokenEnum.EQ, helper.parseInfixExpression);
+        this.registerInfix(TokenEnum.NOT_EQ, helper.parseInfixExpression);
+        this.registerInfix(TokenEnum.LT, helper.parseInfixExpression);
+        this.registerInfix(TokenEnum.GT, helper.parseInfixExpression);
 
         this.nextToken();
         this.nextToken();
@@ -175,60 +170,23 @@ export class Parser {
         return leftExp;
     }
 
-    parseIntegerLiteral(p: Parser): Expression {
-        const lit = new IntegerLiteral();
-        lit.token = p.curToken;
-        lit.value = parseInt(p.curToken.Literal);
+    parseBlockStatement(): BlockStatement {
+        const block = new BlockStatement();
+        block.token = this.curToken;
+        block.statements = [];
 
-        return lit;
-    }
+        this.nextToken();
 
-    parseIdentifier(p: Parser): Expression {
-        return new Identifier(p.curToken, p.curToken.Literal);
-    }
+        while (!this.curTokenIs(TokenEnum.RBRACE) && !this.curTokenIs(TokenEnum.EOF)) {
+            const stmt = this.parseStatement();
+            if (stmt != null) {
+                block.statements.push(stmt);
+            }
 
-    parsePrefixExpression(p: Parser): Expression {
-        const expression = new PrefixExpression();
-        expression.token = p.curToken;
-        expression.operator = p.curToken.Literal;
-
-        p.nextToken();
-
-        expression.right = p.parseExpression(PrecedenceEnum.PREFIX);
-
-        return expression;
-    }
-
-    parseInfixExpression(p: Parser, e: Expression): Expression {
-        const expression = new InfixExpression();
-        expression.token = p.curToken;
-        expression.operator = p.curToken.Literal;
-        expression.left = e;
-
-        const precedence = p.curPrecedence();
-        p.nextToken();
-        expression.right = p.parseExpression(precedence);
-
-        return expression;
-    }
-
-    parseBoolean(p: Parser): Expression {
-        const bool = new Bool();
-        bool.token = p.curToken;
-        bool.value = p.curTokenIs(TokenEnum.TRUE);
-
-        return bool;
-    }
-
-    parseGroupedExpression(p: Parser): Expression {
-        p.nextToken();
-        
-        const exp = p.parseExpression(PrecedenceEnum.LOWEST);
-        if (!p.expectPeek(TokenEnum.RPAREN)) {
-            return null;
+            this.nextToken();
         }
 
-        return exp;
+        return block;
     }
 
     // helpers
