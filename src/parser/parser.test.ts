@@ -80,8 +80,10 @@ test('integer literal expressions', () => {
 
 test('parsing prefix expressions', () => {
     const prefixTests = [
-        { input: '!5;', operator: '!', integerValue: 5 },
-        { input: '-15;', operator: '-', integerValue: 15 }
+        { input: '!5;', operator: '!', value: 5 },
+        { input: '-15;', operator: '-', value: 15 },
+        { input: '!true;', operator: '!', value: true },
+        { input: '!false;', operator: '!', value: false }
     ];
 
     prefixTests.forEach((tt) => {
@@ -96,7 +98,7 @@ test('parsing prefix expressions', () => {
         expect(stmt.expression).toBeInstanceOf(PrefixExpression);
         const exp = <PrefixExpression>stmt.expression;
         expect(exp.operator).toBe(tt.operator);
-        testIntegerLiteral(exp.right, tt.integerValue);
+        testLiteralExpression(exp.right, tt.value);
     });
 });
 
@@ -110,7 +112,8 @@ test('parsing infix expressions', () => {
         { input: '5 == 5;', leftValue: 5, operator: '==', rightValue: 5 },
         { input: '5 != 5;', leftValue: 5, operator: '!=', rightValue: 5 },
         { input: 'true == true', leftValue: true, operator: '==', rightValue: true },
-        { input: 'true == true', leftValue: true, operator: '==', rightValue: true },
+        { input: 'true != false', leftValue: true, operator: '!=', rightValue: false },
+        { input: 'false == false', leftValue: false, operator: '==', rightValue: false }
     ];
 
     infixTests.forEach((tt) => {
