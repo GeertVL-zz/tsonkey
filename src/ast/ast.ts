@@ -274,3 +274,32 @@ export class FunctionLiteral implements Expression {
         return out;
     }
 }
+
+export class CallExpression implements Expression {
+    token: Token;
+    function: Expression;
+    arguments: Expression[];
+
+    expressionNode() {}
+
+    tokenLiteral(): string { 
+        return this.token.Literal; 
+    }
+
+    string(): string {
+        let out: string = '';
+
+        let args = [];
+
+        this.arguments.forEach((arg) => {
+            args.push(arg.string());
+        });
+
+        out = out + this.function.string();
+        out = out + '(';
+        out = out + args.join(', ');
+        out = out + ')';
+
+        return out;
+    }
+}

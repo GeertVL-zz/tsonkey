@@ -1,6 +1,6 @@
 import { Lexer } from "../lexer/lexer";
 import { Parser } from "./parser";
-import { Statement, LetStatement, ReturnStatement, ExpressionStatement, Identifier, IntegerLiteral, Expression, PrefixExpression, InfixExpression, Bool, IfExpression, FunctionLiteral } from "../ast/ast";
+import { Statement, LetStatement, ReturnStatement, ExpressionStatement, Identifier, IntegerLiteral, Expression, PrefixExpression, InfixExpression, Bool, IfExpression, FunctionLiteral, CallExpression } from "../ast/ast";
 
 test('let statements', () => {
     const tests = [
@@ -152,7 +152,10 @@ test('operator precedence parsing', () => {
         { input: '(5 + 5) * 2', expected: '((5 + 5) * 2)' },
         { input: '2 / (5 + 5)', expected: '(2 / (5 + 5))' },
         { input: '-(5 + 5)', expected: '(-(5 + 5))' },
-        { input: '!(true == true)', expected: '(!(true == true))' }
+        { input: '!(true == true)', expected: '(!(true == true))' },
+        { input: 'a + add(b * c) + d', expected: '((a + add((b * c))) + d)' },
+        { input: 'add(a, b, 1, 2 * 3, 4 + 5, add(6, 7 * 8))', expected: 'add(a, b, 1, (2 * 3), (4 + 5), add(6, (7 * 8)))' },
+        { input: 'add(a + b + c * d / f + g)', expected: 'add((((a + b) + ((c * d) / f)) + g))' }
     ];
 
     tests.forEach((tt) => {
@@ -233,6 +236,25 @@ test('function parameter parsing', () => {
     })
 });
 
+test('call expression parsing', () => {
+    const input = 'add(1, 2 * 3, 4 + 5);';
+
+    const l = new Lexer(input);
+    const p = new Parser(l);
+    const program = p.parseProgram();
+    checkParserErrors(p);
+
+    expect(program.statements.length).toBe(1);
+    expect(program.statements[0]).toBeInstanceOf(ExpressionStatement);
+    const stmt = <ExpressionStatement>program.statements[0];
+    expect(stmt.expression).toBeInstanceOf(CallExpression);
+    const exp = <CallExpression>stmt.expression;
+    testIdentifier(exp.function, 'add');
+    expect(exp.arguments.length).toBe(3);
+    testLiteralExpression(exp.arguments[0], 1);
+    testInfixExpression(exp.arguments[1], 2, '*', 3);
+    testInfixExpression(exp.arguments[2], 4, '+', 5);
+});
 
 // helpers
 

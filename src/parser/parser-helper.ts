@@ -1,5 +1,5 @@
 import { Parser } from "./parser";
-import { Expression, IfExpression, IntegerLiteral, Identifier, PrefixExpression, InfixExpression, Bool, FunctionLiteral } from "../ast/ast";
+import { Expression, IfExpression, IntegerLiteral, Identifier, PrefixExpression, InfixExpression, Bool, FunctionLiteral, CallExpression } from "../ast/ast";
 import { TokenEnum } from "../token/token";
 
 export enum PrecedenceEnum {
@@ -47,6 +47,14 @@ export function parseInfixExpression(p: Parser, e: Expression): Expression {
     expression.right = p.parseExpression(precedence);
 
     return expression;
+}
+
+export function parseCallExpression(p: Parser, e: Expression): Expression {
+    const exp = new CallExpression();
+    exp.token = p.curToken;
+    exp.function = e;
+    exp.arguments = p.parseCallArguments();
+    return exp;
 }
 
 export function parseBoolean(p: Parser): Expression {

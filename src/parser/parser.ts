@@ -31,7 +31,8 @@ const precedences: Map<string, PrecedenceEnum>
             [TokenEnum.PLUS, PrecedenceEnum.SUM],
             [TokenEnum.MINUS, PrecedenceEnum.SUM],
             [TokenEnum.SLASH, PrecedenceEnum.PRODUCT],
-            [TokenEnum.ASTERISK, PrecedenceEnum.PRODUCT]
+            [TokenEnum.ASTERISK, PrecedenceEnum.PRODUCT],
+            [TokenEnum.LPAREN, PrecedenceEnum.CALL]
         ]);
 
 export class Parser {
@@ -63,6 +64,7 @@ export class Parser {
         this.registerInfix(TokenEnum.NOT_EQ, helper.parseInfixExpression);
         this.registerInfix(TokenEnum.LT, helper.parseInfixExpression);
         this.registerInfix(TokenEnum.GT, helper.parseInfixExpression);
+        this.registerInfix(TokenEnum.LPAREN, helper.parseCallExpression);
 
         this.nextToken();
         this.nextToken();
@@ -215,6 +217,31 @@ export class Parser {
         }
 
         return identifiers;
+    }
+
+    parseCallArguments(): Expression[] {
+        const args: Expression[] = [];
+
+        if (this.peekTokenIs(TokenEnum.RPAREN)) {
+            this.nextToken();
+            return args;
+        }
+
+        this.nextToken();
+        args.push(this.parseExpression(PrecedenceEnum.LOWEST));
+
+        while (this.peekTokenIs(TokenEnum.COMMA)) {
+            this.nextToken();
+            this.nextToken();
+
+            args.push(this.parseExpression(PrecedenceEnum.LOWEST));
+        }
+
+        if (!this.expectPeek(TokenEnum.RPAREN)) {
+            return null;
+        }
+
+        return args;
     }
 
     // helpers
