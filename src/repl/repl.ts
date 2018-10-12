@@ -2,6 +2,7 @@ import * as readline from 'readline';
 import { Lexer } from '../lexer/lexer';
 import { TokenEnum } from '../token/token';
 import { Parser } from '../parser/parser';
+import { Eval } from '../evaluator/evaluator';
 
 const PROMPT = '>> ';
 
@@ -18,8 +19,11 @@ export function Start() {
                 printParserErrors(p.errors);
             }
 
-            console.log(program.string());
-            console.log('\n');
+            const evaluated = Eval(program);
+            if (evaluated != null) {
+                console.log(evaluated.inspect());
+                console.log('\n');
+            }
         });
     }
 

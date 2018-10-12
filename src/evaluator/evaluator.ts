@@ -1,23 +1,30 @@
-import { Node, IntegerLiteral, Program, ExpressionStatement, Statement } from '../ast/ast';
-import { Integer, Obj } from '../object/object';
+import * as ast from '../ast/ast';
+import { Integer, Obj, Bool } from '../object/object';
 
-export function Eval(node: Node): Obj {
-    if (node instanceof Program) {
-        return evalStatements((<Program>node).statements);
+const TRUE = Object.assign(new Bool(), { value: true });
+const FALSE = Object.assign(new Bool(), { value: false });
+
+export function Eval(node: ast.Node): Obj {
+    if (node instanceof ast.Program) {
+        return evalStatements((<ast.Program>node).statements);
     }
 
-    if (node instanceof ExpressionStatement) {
-        return Eval((<ExpressionStatement>node).expression);
+    if (node instanceof ast.ExpressionStatement) {
+        return Eval((<ast.ExpressionStatement>node).expression);
     }
 
-    if (node instanceof IntegerLiteral) {
-        return Object.assign(new Integer(), { value: (<IntegerLiteral>node).value });
+    if (node instanceof ast.IntegerLiteral) {
+        return Object.assign(new Integer(), { value: (<ast.IntegerLiteral>node).value });
+    }
+
+    if (node instanceof ast.Bool) {
+        return nativeBoolToBooleanObject((<ast.Bool>node).value);
     }
 
     return null;
 }
 
-function evalStatements(stmts: Statement[]): Obj {
+function evalStatements(stmts: ast.Statement[]): Obj {
     let result: Obj;
 
     stmts.forEach((stmt) => {
@@ -25,4 +32,12 @@ function evalStatements(stmts: Statement[]): Obj {
     });
 
     return result;
+}
+
+function nativeBoolToBooleanObject(input: boolean): Bool {
+    if (input) {
+        return TRUE;
+    }
+
+    return FALSE;
 }

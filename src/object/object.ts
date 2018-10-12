@@ -23,7 +23,7 @@ export class Integer implements Obj {
     }
 }
 
-export class Boolean implements Obj {
+export class Bool implements Obj {
     value: boolean;
 
     inspect(): string {
