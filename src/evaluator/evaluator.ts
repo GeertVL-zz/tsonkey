@@ -1,9 +1,9 @@
 import * as ast from '../ast/ast';
 import { Integer, Obj, Bool, Null, ObjectTypeEnum } from '../object/object';
 
-const TRUE = Object.assign(new Bool(), { value: true });
-const FALSE = Object.assign(new Bool(), { value: false });
-const NULL = new Null();
+export const TRUE = Object.assign(new Bool(), { value: true });
+export const FALSE = Object.assign(new Bool(), { value: false });
+export const NULL = new Null();
 
 export function Eval(node: ast.Node): Obj {
     if (node instanceof ast.Program) {
@@ -26,6 +26,13 @@ export function Eval(node: ast.Node): Obj {
         const prefix = (<ast.PrefixExpression>node);
         const right = Eval(prefix.right);
         return evalPrefixExpression(prefix.operator, right);
+    }
+
+    if (node instanceof ast.InfixExpression) {
+        const infix = <ast.InfixExpression>node;
+        const left = Eval(infix.left);
+        const right = Eval(infix.right);
+        return evalInfixExpression(infix.operator, left, right);
     }
 
     return null;
@@ -80,4 +87,46 @@ function evalMinusPrefixOperatorExpression(right: Obj): Obj {
 
     const value = (<Integer>right).value;
     return Object.assign(new Integer(), { value: -value });
+}
+
+function evalInfixExpression(operator: string, left: Obj, right: Obj): Obj {
+    if (left.type() === ObjectTypeEnum.INTEGER_OBJ && right.type() === ObjectTypeEnum.INTEGER_OBJ) {
+        return evalIntegerInfixExpression(operator, left, right);
+    }
+
+    if (operator === '==') {
+        return nativeBoolToBooleanObject(left === right);
+    }
+
+    if (operator === '!=') {
+        return nativeBoolToBooleanObject(left !== right);
+    }
+
+    return NULL;
+}
+
+function evalIntegerInfixExpression(operator: string, left: Obj, right: Obj): Obj {
+    const leftVal = (<Integer>left).value;
+    const rightVal = (<Integer>right).value;
+
+    switch (operator) {
+        case '+':
+            return Object.assign(new Integer(), { value: leftVal + rightVal });
+        case '-':
+            return Object.assign(new Integer(), { value: leftVal - rightVal });                
+        case '*':
+            return Object.assign(new Integer(), { value: leftVal * rightVal });    
+        case '/':
+            return Object.assign(new Integer(), { value: leftVal / rightVal });
+        case '<':
+            return nativeBoolToBooleanObject(leftVal < rightVal);
+        case '>':
+            return nativeBoolToBooleanObject(leftVal > rightVal);
+        case '==':
+            return nativeBoolToBooleanObject(leftVal == rightVal);
+        case '!=':
+            return nativeBoolToBooleanObject(leftVal != rightVal);    
+    }
+
+    return NULL;
 }
