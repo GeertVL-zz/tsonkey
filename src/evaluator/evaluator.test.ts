@@ -6,7 +6,9 @@ import { Eval } from "./evaluator";
 test('eval integer expression', () => {
     const tests = [
         { input: '5', expected: 5 },
-        { input: '10', expected: 10 }
+        { input: '10', expected: 10 },
+        { input: '-5', expected: -5 },
+        { input: '-10', expected: -10 }
     ];
 
     tests.forEach((tt) => {
@@ -42,6 +44,7 @@ test('bang operator', () => {
         testBooleanObject(evaluated, tt.expected);
     });
 });
+
 
 function testEval(input: string): Obj {
     const l = new Lexer(input);

@@ -1,5 +1,5 @@
 import * as ast from '../ast/ast';
-import { Integer, Obj, Bool, Null } from '../object/object';
+import { Integer, Obj, Bool, Null, ObjectTypeEnum } from '../object/object';
 
 const TRUE = Object.assign(new Bool(), { value: true });
 const FALSE = Object.assign(new Bool(), { value: false });
@@ -53,6 +53,8 @@ function evalPrefixExpression(operator: string, right: Obj): Obj {
     switch (operator) {
         case '!':
             return evalBangOperatorExpression(right);
+        case '-':
+            return evalMinusPrefixOperatorExpression(right);
         default:
             return null;    
     }
@@ -69,4 +71,13 @@ function evalBangOperatorExpression(right: Obj): Obj {
         default:
             return FALSE;            
     }
+}
+
+function evalMinusPrefixOperatorExpression(right: Obj): Obj {
+    if (right.type() !== ObjectTypeEnum.INTEGER_OBJ) {
+        return NULL;
+    }
+
+    const value = (<Integer>right).value;
+    return Object.assign(new Integer(), { value: -value });
 }
