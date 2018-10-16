@@ -35,6 +35,14 @@ export function Eval(node: ast.Node): Obj {
         return evalInfixExpression(infix.operator, left, right);
     }
 
+    if (node instanceof ast.BlockStatement) {
+        return evalStatements(node.statements);
+    }
+
+    if (node instanceof ast.IfExpression) {
+        return evalIfExpression(node);
+    }
+
     return null;
 }
 
@@ -129,4 +137,29 @@ function evalIntegerInfixExpression(operator: string, left: Obj, right: Obj): Ob
     }
 
     return NULL;
+}
+
+function evalIfExpression(ie: ast.IfExpression): Obj {
+    const condition = Eval(ie.condition);
+
+    if (isTruthy(condition)) {
+        return Eval(ie.consequence);
+    } else if (ie.alternative != null) {
+        return Eval(ie.alternative);
+    } else {
+        return NULL;
+    }
+}
+
+function isTruthy(obj: Obj): boolean {
+    switch (obj) {
+        case NULL:
+            return false;
+        case TRUE:
+            return true;
+        case FALSE:
+            return false;
+        default:
+            return true;    
+    }
 }
