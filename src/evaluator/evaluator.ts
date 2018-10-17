@@ -29,13 +29,22 @@ export function Eval(node: ast.Node): obj.Object {
     if (node instanceof ast.PrefixExpression) {
         const prefix = (<ast.PrefixExpression>node);
         const right = Eval(prefix.right);
+        if (isError(right)) {
+            return right;
+        }
         return evalPrefixExpression(prefix.operator, right);
     }
 
     if (node instanceof ast.InfixExpression) {
         const infix = <ast.InfixExpression>node;
         const left = Eval(infix.left);
+        if (isError(left)) {
+            return left;
+        }
         const right = Eval(infix.right);
+        if (isError(right)) {
+            return right;
+        }
         return evalInfixExpression(infix.operator, left, right);
     }
 
@@ -49,6 +58,9 @@ export function Eval(node: ast.Node): obj.Object {
 
     if (node instanceof ast.ReturnStatement) {
         const val = Eval(node.returnValue);
+        if (isError(val)) {
+            return val;
+        }
         const returnValue = new obj.ReturnValue();
         returnValue.value = val;
         return returnValue;
@@ -194,6 +206,9 @@ function evalIntegerInfixExpression(operator: string, left: obj.Object, right: o
 
 function evalIfExpression(ie: ast.IfExpression): obj.Object {
     const condition = Eval(ie.condition);
+    if (isError(condition)) {
+        return condition;
+    }
 
     if (isTruthy(condition)) {
         return Eval(ie.consequence);
@@ -219,4 +234,12 @@ function isTruthy(object: obj.Object): boolean {
 
 function newError(message: string): obj.Error {
     return Object.assign(new obj.Error(), { message: message });
+}
+
+function isError(object: obj.Object): boolean {
+    if (object != null) {
+        return object.type() === obj.ObjectTypeEnum.ERROR_OBJ;
+    }
+
+    return false;
 }
