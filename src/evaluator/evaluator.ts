@@ -1,11 +1,11 @@
 import * as ast from '../ast/ast';
-import { Integer, Obj, Bool, Null, ObjectTypeEnum, ReturnValue } from '../object/object';
+import * as obj from '../object/object';
 
-export const TRUE = Object.assign(new Bool(), { value: true });
-export const FALSE = Object.assign(new Bool(), { value: false });
-export const NULL = new Null();
+export const TRUE = Object.assign(new obj.Bool(), { value: true });
+export const FALSE = Object.assign(new obj.Bool(), { value: false });
+export const NULL = new obj.Null();
 
-export function Eval(node: ast.Node): Obj {
+export function Eval(node: ast.Node): obj.Object {
     if (node instanceof ast.Program) {
         return evalProgram(node);
     }
@@ -19,7 +19,7 @@ export function Eval(node: ast.Node): Obj {
     }
 
     if (node instanceof ast.IntegerLiteral) {
-        return Object.assign(new Integer(), { value: (<ast.IntegerLiteral>node).value });
+        return Object.assign(new obj.Integer(), { value: (<ast.IntegerLiteral>node).value });
     }
 
     if (node instanceof ast.Bool) {
@@ -49,7 +49,7 @@ export function Eval(node: ast.Node): Obj {
 
     if (node instanceof ast.ReturnStatement) {
         const val = Eval(node.returnValue);
-        const returnValue = new ReturnValue();
+        const returnValue = new obj.ReturnValue();
         returnValue.value = val;
         return returnValue;
     }
@@ -57,27 +57,17 @@ export function Eval(node: ast.Node): Obj {
     return null;
 }
 
-function evalProgram(program: ast.Program): Obj {
-    let result: Obj;
+function evalProgram(program: ast.Program): obj.Object {
+    let result: obj.Object;
 
     for (let statement of program.statements) {
         result = Eval(statement);
 
-        if (result instanceof ReturnValue) {
-            return (<ReturnValue>result).value;
+        if (result instanceof obj.ReturnValue) {
+            return (<obj.ReturnValue>result).value;
         }
-    }
 
-    return result;
-}
-
-function evalBlockStatement(block: ast.BlockStatement): Obj {
-    let result: Obj;
-
-    for (let statement of block.statements) {
-        result = Eval(statement);
-
-        if (result != null && result.type() === ObjectTypeEnum.RETURN_VALUE_OBJ) {
+        if (result instanceof obj.Error) {
             return result;
         }
     }
@@ -85,21 +75,37 @@ function evalBlockStatement(block: ast.BlockStatement): Obj {
     return result;
 }
 
-function evalStatements(stmts: ast.Statement[]): Obj {
-    let result: Obj;
+function evalBlockStatement(block: ast.BlockStatement): obj.Object {
+    let result: obj.Object;
+
+    for (let statement of block.statements) {
+        result = Eval(statement);
+
+        if (result != null) {
+            if (result.type() === obj.ObjectTypeEnum.RETURN_VALUE_OBJ || result.type() === obj.ObjectTypeEnum.ERROR_OBJ) {
+                return result;
+            }
+        }
+    }
+
+    return result;
+}
+
+function evalStatements(stmts: ast.Statement[]): obj.Object {
+    let result: obj.Object;
 
     stmts.forEach((stmt) => {
-        result = Eval(stmt);
+           result = Eval(stmt);
 
-        if (result instanceof ReturnValue) {
-            return (<ReturnValue>result).value;
+        if (result instanceof obj.ReturnValue) {
+            return (<obj.ReturnValue>result).value;
         }
     });
 
     return result;
 }
 
-function nativeBoolToBooleanObject(input: boolean): Bool {
+function nativeBoolToBooleanObject(input: boolean): obj.Bool {
     if (input) {
         return TRUE;
     }
@@ -107,18 +113,18 @@ function nativeBoolToBooleanObject(input: boolean): Bool {
     return FALSE;
 }
 
-function evalPrefixExpression(operator: string, right: Obj): Obj {
+function evalPrefixExpression(operator: string, right: obj.Object): obj.Object {
     switch (operator) {
         case '!':
             return evalBangOperatorExpression(right);
         case '-':
             return evalMinusPrefixOperatorExpression(right);
         default:
-            return null;    
+            return newError(`unknown operator: ${operator} ${right.type()}`);    
     }
 }
 
-function evalBangOperatorExpression(right: Obj): Obj {
+function evalBangOperatorExpression(right: obj.Object): obj.Object {
     switch (right) {
         case TRUE:
             return FALSE;
@@ -131,17 +137,17 @@ function evalBangOperatorExpression(right: Obj): Obj {
     }
 }
 
-function evalMinusPrefixOperatorExpression(right: Obj): Obj {
-    if (right.type() !== ObjectTypeEnum.INTEGER_OBJ) {
-        return NULL;
+function evalMinusPrefixOperatorExpression(right: obj.Object): obj.Object {
+    if (right.type() !== obj.ObjectTypeEnum.INTEGER_OBJ) {
+        return newError(`unknown operator: -${right.type()}`);
     }
 
-    const value = (<Integer>right).value;
-    return Object.assign(new Integer(), { value: -value });
+    const value = (<obj.Integer>right).value;
+    return Object.assign(new obj.Integer(), { value: -value });
 }
 
-function evalInfixExpression(operator: string, left: Obj, right: Obj): Obj {
-    if (left.type() === ObjectTypeEnum.INTEGER_OBJ && right.type() === ObjectTypeEnum.INTEGER_OBJ) {
+function evalInfixExpression(operator: string, left: obj.Object, right: obj.Object): obj.Object {
+    if (left.type() === obj.ObjectTypeEnum.INTEGER_OBJ && right.type() === obj.ObjectTypeEnum.INTEGER_OBJ) {
         return evalIntegerInfixExpression(operator, left, right);
     }
 
@@ -153,22 +159,26 @@ function evalInfixExpression(operator: string, left: Obj, right: Obj): Obj {
         return nativeBoolToBooleanObject(left !== right);
     }
 
-    return NULL;
+    if (left.type() !== right.type()) {
+        return newError(`type mismatch: ${left.type()} ${operator} ${right.type()}`);
+    }
+
+    return newError(`unknown operator: ${left.type()} ${operator} ${right.type()}`);
 }
 
-function evalIntegerInfixExpression(operator: string, left: Obj, right: Obj): Obj {
-    const leftVal = (<Integer>left).value;
-    const rightVal = (<Integer>right).value;
+function evalIntegerInfixExpression(operator: string, left: obj.Object, right: obj.Object): obj.Object {
+    const leftVal = (<obj.Integer>left).value;
+    const rightVal = (<obj.Integer>right).value;
 
     switch (operator) {
         case '+':
-            return Object.assign(new Integer(), { value: leftVal + rightVal });
+            return Object.assign(new obj.Integer(), { value: leftVal + rightVal });
         case '-':
-            return Object.assign(new Integer(), { value: leftVal - rightVal });                
+            return Object.assign(new obj.Integer(), { value: leftVal - rightVal });                
         case '*':
-            return Object.assign(new Integer(), { value: leftVal * rightVal });    
+            return Object.assign(new obj.Integer(), { value: leftVal * rightVal });    
         case '/':
-            return Object.assign(new Integer(), { value: leftVal / rightVal });
+            return Object.assign(new obj.Integer(), { value: leftVal / rightVal });
         case '<':
             return nativeBoolToBooleanObject(leftVal < rightVal);
         case '>':
@@ -179,10 +189,10 @@ function evalIntegerInfixExpression(operator: string, left: Obj, right: Obj): Ob
             return nativeBoolToBooleanObject(leftVal != rightVal);    
     }
 
-    return NULL;
+    return newError(`unknown operator: ${left.type()} ${operator} ${right.type()}`);
 }
 
-function evalIfExpression(ie: ast.IfExpression): Obj {
+function evalIfExpression(ie: ast.IfExpression): obj.Object {
     const condition = Eval(ie.condition);
 
     if (isTruthy(condition)) {
@@ -194,8 +204,8 @@ function evalIfExpression(ie: ast.IfExpression): Obj {
     }
 }
 
-function isTruthy(obj: Obj): boolean {
-    switch (obj) {
+function isTruthy(object: obj.Object): boolean {
+    switch (object) {
         case NULL:
             return false;
         case TRUE:
@@ -205,4 +215,8 @@ function isTruthy(obj: Obj): boolean {
         default:
             return true;    
     }
+}
+
+function newError(message: string): obj.Error {
+    return Object.assign(new obj.Error(), { message: message });
 }

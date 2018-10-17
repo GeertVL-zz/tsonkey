@@ -4,15 +4,16 @@ export enum ObjectTypeEnum {
     INTEGER_OBJ = 'INTEGER',
     BOOLEAN_OBJ = 'BOOLEAN',
     NULL_OBJ = 'NULL',
-    RETURN_VALUE_OBJ = 'RETURN_VALUE'
+    RETURN_VALUE_OBJ = 'RETURN_VALUE',
+    ERROR_OBJ = 'ERROR',
 }
 
-export interface Obj {
+export interface Object {
     type(): ObjectType;
     inspect(): string;
 }
 
-export class Integer implements Obj {
+export class Integer implements Object {
     value: number;
 
     inspect(): string {
@@ -24,7 +25,7 @@ export class Integer implements Obj {
     }
 }
 
-export class Bool implements Obj {
+export class Bool implements Object {
     value: boolean;
 
     inspect(): string {
@@ -36,7 +37,7 @@ export class Bool implements Obj {
     }
 }
 
-export class Null implements Obj {
+export class Null implements Object {
     inspect(): string {
         return 'null';
     }
@@ -46,8 +47,8 @@ export class Null implements Obj {
     }
 }
 
-export class ReturnValue implements Obj {
-    value: Obj;
+export class ReturnValue implements Object {
+    value: Object;
 
     inspect(): string {
         return this.value.inspect();
@@ -55,5 +56,17 @@ export class ReturnValue implements Obj {
 
     type(): ObjectType {
         return ObjectTypeEnum.RETURN_VALUE_OBJ;
+    }
+}
+
+export class Error implements Object {
+    message: string;
+
+    inspect(): string {
+        return `ERROR: ${this.message}`;
+    }
+
+    type(): ObjectType {
+        return ObjectTypeEnum.ERROR_OBJ;
     }
 }

@@ -1,6 +1,6 @@
 import { Lexer } from "../lexer/lexer";
 import { Parser } from "../parser/parser";
-import { Obj, Integer, Bool } from "../object/object";
+import * as obj from "../object/object";
 import { Eval, NULL } from "./evaluator";
 
 test('eval integer expression', () => {
@@ -120,7 +120,37 @@ test('return statements', () => {
     });
 });
 
-function testEval(input: string): Obj {
+test('error handling', () => {
+    const tests = [
+        { input: '5 + true;', expectedMessage: 'type mismatch: INTEGER + BOOLEAN' },
+        { input: '5 + true; 5;', expectedMessage: 'type mismatch: INTEGER + BOOLEAN' },
+        { input: '-true', expectedMessage: 'unknown operator: -BOOLEAN' },
+        { input: 'true + false;', expectedMessage: 'unknown operator: BOOLEAN + BOOLEAN' },
+        { input: '5; true + false; 5', expectedMessage: 'unknown operator: BOOLEAN + BOOLEAN' },
+        { input: 'if (10 > 1) { true + false; }', expectedMessage: 'unknown operator: BOOLEAN + BOOLEAN' },
+        { 
+            input: ` 
+                if (10 > 1) { 
+                    if (10 > 1) { 
+                        return true + false; 
+                    }
+                    133
+                    return 1;
+                } 
+                `,
+            expectedMessage: 'unknown operator: BOOLEAN + BOOLEAN' 
+        },    
+    ];
+
+    tests.forEach((tt) => {
+        const evaluated = testEval(tt.input);
+
+        expect(evaluated).toBeInstanceOf(obj.Error);
+        expect((<obj.Error>evaluated).message).toBe(tt.expectedMessage);
+    });
+});
+
+function testEval(input: string): obj.Object {
     const l = new Lexer(input);
     const p = new Parser(l);
     const program = p.parseProgram();
@@ -128,18 +158,18 @@ function testEval(input: string): Obj {
     return Eval(program);
 }
 
-function testIntegerObject(obj: Obj, expected: number): void {
-    expect(obj).toBeInstanceOf(Integer);
-    const result = <Integer>obj;
+function testIntegerObject(object: obj.Object, expected: number): void {
+    expect(object).toBeInstanceOf(obj.Integer);
+    const result = <obj.Integer>object;
     expect(result.value).toBe(expected);
 }
 
-function testBooleanObject(obj: Obj, expected: boolean): void {
-    expect(obj).toBeInstanceOf(Bool);
-    const result = <Bool>obj;
+function testBooleanObject(object: obj.Object, expected: boolean): void {
+    expect(object).toBeInstanceOf(obj.Bool);
+    const result = <obj.Bool>object;
     expect(result.value).toBe(expected);
 }
 
-function testNullObject(obj: Obj): void {
-    expect(obj).toBe(NULL);
+function testNullObject(object: obj.Object): void {
+    expect(object).toBe(NULL);
 }
