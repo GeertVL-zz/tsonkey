@@ -8,11 +8,6 @@ import {
     ReturnStatement, 
     Expression, 
     ExpressionStatement, 
-    IntegerLiteral,
-    PrefixExpression,
-    InfixExpression,
-    Bool,
-    IfExpression,
     BlockStatement
 } from "../ast/ast";
 import * as helper from "./parser-helper";

@@ -70,3 +70,24 @@ export class Error implements Object {
         return ObjectTypeEnum.ERROR_OBJ;
     }
 }
+
+export function NewEnvironment(): Environment {
+    const ev = new Environment();
+    ev.store = new Map();
+    return ev;
+}
+
+export class Environment {
+    store: Map<string, Object>;
+
+    get(name: string): [Object, boolean] {
+        const value = this.store.get(name);
+
+        return [value, value !== undefined];
+    }
+
+    set(name: string, value: Object): Object {
+        this.store.set(name, value);
+        return value;
+    }
+}

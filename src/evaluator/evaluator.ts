@@ -5,17 +5,17 @@ export const TRUE = Object.assign(new obj.Bool(), { value: true });
 export const FALSE = Object.assign(new obj.Bool(), { value: false });
 export const NULL = new obj.Null();
 
-export function Eval(node: ast.Node): obj.Object {
+export function Eval(node: ast.Node, env: obj.Environment): obj.Object {
     if (node instanceof ast.Program) {
-        return evalProgram(node);
+        return evalProgram(node, env);
     }
 
     if (node instanceof ast.BlockStatement) {
-        return evalBlockStatement(node);
+        return evalBlockStatement(node, env);
     }
 
     if (node instanceof ast.ExpressionStatement) {
-        return Eval((<ast.ExpressionStatement>node).expression);
+        return Eval((<ast.ExpressionStatement>node).expression, env);
     }
 
     if (node instanceof ast.IntegerLiteral) {
@@ -28,7 +28,7 @@ export function Eval(node: ast.Node): obj.Object {
 
     if (node instanceof ast.PrefixExpression) {
         const prefix = (<ast.PrefixExpression>node);
-        const right = Eval(prefix.right);
+        const right = Eval(prefix.right, env);
         if (isError(right)) {
             return right;
         }
@@ -37,11 +37,11 @@ export function Eval(node: ast.Node): obj.Object {
 
     if (node instanceof ast.InfixExpression) {
         const infix = <ast.InfixExpression>node;
-        const left = Eval(infix.left);
+        const left = Eval(infix.left, env);
         if (isError(left)) {
             return left;
         }
-        const right = Eval(infix.right);
+        const right = Eval(infix.right, env);
         if (isError(right)) {
             return right;
         }
@@ -49,15 +49,15 @@ export function Eval(node: ast.Node): obj.Object {
     }
 
     if (node instanceof ast.BlockStatement) {
-        return evalStatements(node.statements);
+        return evalStatements(node.statements, env);
     }
 
     if (node instanceof ast.IfExpression) {
-        return evalIfExpression(node);
+        return evalIfExpression(node, env);
     }
 
     if (node instanceof ast.ReturnStatement) {
-        const val = Eval(node.returnValue);
+        const val = Eval(node.returnValue, env);
         if (isError(val)) {
             return val;
         }
@@ -66,14 +66,26 @@ export function Eval(node: ast.Node): obj.Object {
         return returnValue;
     }
 
+    if (node instanceof ast.LetStatement) {
+        const val = Eval(node.value, env);
+        if (isError(val)) {
+            return val;
+        }
+        env.set(node.name.value, val);
+    }
+
+    if (node instanceof ast.Identifier) {
+        return evalIdentifier(node, env);
+    }
+
     return null;
 }
 
-function evalProgram(program: ast.Program): obj.Object {
+function evalProgram(program: ast.Program, env: obj.Environment): obj.Object {
     let result: obj.Object;
 
     for (let statement of program.statements) {
-        result = Eval(statement);
+        result = Eval(statement, env);
 
         if (result instanceof obj.ReturnValue) {
             return (<obj.ReturnValue>result).value;
@@ -87,11 +99,11 @@ function evalProgram(program: ast.Program): obj.Object {
     return result;
 }
 
-function evalBlockStatement(block: ast.BlockStatement): obj.Object {
+function evalBlockStatement(block: ast.BlockStatement, env: obj.Environment): obj.Object {
     let result: obj.Object;
 
     for (let statement of block.statements) {
-        result = Eval(statement);
+        result = Eval(statement, env);
 
         if (result != null) {
             if (result.type() === obj.ObjectTypeEnum.RETURN_VALUE_OBJ || result.type() === obj.ObjectTypeEnum.ERROR_OBJ) {
@@ -103,11 +115,11 @@ function evalBlockStatement(block: ast.BlockStatement): obj.Object {
     return result;
 }
 
-function evalStatements(stmts: ast.Statement[]): obj.Object {
+function evalStatements(stmts: ast.Statement[], env: obj.Environment): obj.Object {
     let result: obj.Object;
 
     stmts.forEach((stmt) => {
-           result = Eval(stmt);
+           result = Eval(stmt, env);
 
         if (result instanceof obj.ReturnValue) {
             return (<obj.ReturnValue>result).value;
@@ -204,19 +216,28 @@ function evalIntegerInfixExpression(operator: string, left: obj.Object, right: o
     return newError(`unknown operator: ${left.type()} ${operator} ${right.type()}`);
 }
 
-function evalIfExpression(ie: ast.IfExpression): obj.Object {
-    const condition = Eval(ie.condition);
+function evalIfExpression(ie: ast.IfExpression, env: obj.Environment): obj.Object {
+    const condition = Eval(ie.condition, env);
     if (isError(condition)) {
         return condition;
     }
 
     if (isTruthy(condition)) {
-        return Eval(ie.consequence);
+        return Eval(ie.consequence, env);
     } else if (ie.alternative != null) {
-        return Eval(ie.alternative);
+        return Eval(ie.alternative, env);
     } else {
         return NULL;
     }
+}
+
+function evalIdentifier(node: ast.Identifier, env: obj.Environment): obj.Object {
+    const value = env.get(node.value);
+    if (!value[1]) {
+        return newError(`identifier not found: ${node.value}`);
+    }
+
+    return value[0];
 }
 
 function isTruthy(object: obj.Object): boolean {
