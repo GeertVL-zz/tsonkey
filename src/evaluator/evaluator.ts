@@ -1,5 +1,5 @@
 import * as ast from '../ast/ast';
-import { Integer, Obj, Bool, Null, ObjectTypeEnum } from '../object/object';
+import { Integer, Obj, Bool, Null, ObjectTypeEnum, ReturnValue } from '../object/object';
 
 export const TRUE = Object.assign(new Bool(), { value: true });
 export const FALSE = Object.assign(new Bool(), { value: false });
@@ -7,7 +7,11 @@ export const NULL = new Null();
 
 export function Eval(node: ast.Node): Obj {
     if (node instanceof ast.Program) {
-        return evalStatements((<ast.Program>node).statements);
+        return evalProgram(node);
+    }
+
+    if (node instanceof ast.BlockStatement) {
+        return evalBlockStatement(node);
     }
 
     if (node instanceof ast.ExpressionStatement) {
@@ -43,7 +47,42 @@ export function Eval(node: ast.Node): Obj {
         return evalIfExpression(node);
     }
 
+    if (node instanceof ast.ReturnStatement) {
+        const val = Eval(node.returnValue);
+        const returnValue = new ReturnValue();
+        returnValue.value = val;
+        return returnValue;
+    }
+
     return null;
+}
+
+function evalProgram(program: ast.Program): Obj {
+    let result: Obj;
+
+    for (let statement of program.statements) {
+        result = Eval(statement);
+
+        if (result instanceof ReturnValue) {
+            return (<ReturnValue>result).value;
+        }
+    }
+
+    return result;
+}
+
+function evalBlockStatement(block: ast.BlockStatement): Obj {
+    let result: Obj;
+
+    block.statements.forEach((statement) => {
+        result = Eval(statement);
+
+        if (result != null && result.type() === ObjectTypeEnum.RETURN_VALUE_OBJ) {
+            return result;
+        }
+    });
+
+    return result;
 }
 
 function evalStatements(stmts: ast.Statement[]): Obj {
@@ -51,6 +90,10 @@ function evalStatements(stmts: ast.Statement[]): Obj {
 
     stmts.forEach((stmt) => {
         result = Eval(stmt);
+
+        if (result instanceof ReturnValue) {
+            return (<ReturnValue>result).value;
+        }
     });
 
     return result;

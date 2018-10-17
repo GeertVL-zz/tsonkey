@@ -3,7 +3,8 @@ type ObjectType = string;
 export enum ObjectTypeEnum {
     INTEGER_OBJ = 'INTEGER',
     BOOLEAN_OBJ = 'BOOLEAN',
-    NULL_OBJ = 'NULL'
+    NULL_OBJ = 'NULL',
+    RETURN_VALUE_OBJ = 'RETURN_VALUE'
 }
 
 export interface Obj {
@@ -42,5 +43,17 @@ export class Null implements Obj {
 
     type(): ObjectType {
         return ObjectTypeEnum.NULL_OBJ;
+    }
+}
+
+export class ReturnValue implements Obj {
+    value: Obj;
+
+    inspect(): string {
+        return this.value.inspect();
+    }
+
+    type(): ObjectType {
+        return ObjectTypeEnum.RETURN_VALUE_OBJ;
     }
 }

@@ -94,6 +94,20 @@ test('if else expressions', () => {
     })
 });
 
+test('return statements', () => {
+    const tests = [
+        { input: 'return 10;', expected: 10 },
+        { input: 'return 10; 9;', expected: 10 },
+        { input: 'return 2 * 5; 9;', expected: 10 },
+        { input: '9; return 2 * 5; 9;', expected: 10 }
+    ];
+
+    tests.forEach((tt) => {
+        const evaluated = testEval(tt.input);
+        testIntegerObject(evaluated, tt.expected);
+    });
+});
+
 function testEval(input: string): Obj {
     const l = new Lexer(input);
     const p = new Parser(l);
