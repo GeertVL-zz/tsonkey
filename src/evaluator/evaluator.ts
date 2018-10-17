@@ -74,13 +74,13 @@ function evalProgram(program: ast.Program): Obj {
 function evalBlockStatement(block: ast.BlockStatement): Obj {
     let result: Obj;
 
-    block.statements.forEach((statement) => {
+    for (let statement of block.statements) {
         result = Eval(statement);
 
         if (result != null && result.type() === ObjectTypeEnum.RETURN_VALUE_OBJ) {
             return result;
         }
-    });
+    }
 
     return result;
 }
