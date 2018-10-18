@@ -78,6 +78,27 @@ export function Eval(node: ast.Node, env: obj.Environment): obj.Object {
         return evalIdentifier(node, env);
     }
 
+    if (node instanceof ast.FunctionLiteral) {
+        const params = node.parameters;
+        const body = node.body;
+
+        return Object.assign(new obj.Function(), { parameters: params, env: env, body: body });
+    }
+
+    if (node instanceof ast.CallExpression) {
+        const funct = Eval(node.function, env);
+        if (isError(funct)) {
+            return funct;
+        }
+
+        const args = evalExpressions(node.arguments, env);
+        if (args.length == 1 && isError(args[0])) {
+            return args[0];
+        }
+
+        return applyFunction(funct, args);
+    }
+
     return null;
 }
 
@@ -240,6 +261,21 @@ function evalIdentifier(node: ast.Identifier, env: obj.Environment): obj.Object 
     return value[0];
 }
 
+function evalExpressions(exps: ast.Expression[], env: obj.Environment): obj.Object[] {
+    let result: obj.Object[] = [];
+
+    for (let e of exps) {
+        const evaluated = Eval(e, env);
+        if (isError(evaluated)) {
+            return [ evaluated ];
+        }
+
+        result.push(evaluated);
+    }
+
+    return result;
+}
+
 function isTruthy(object: obj.Object): boolean {
     switch (object) {
         case NULL:
@@ -263,4 +299,34 @@ function isError(object: obj.Object): boolean {
     }
 
     return false;
+}
+
+function applyFunction(fn: obj.Object, args: obj.Object[]): obj.Object {
+    if (!(fn instanceof obj.Function)) {
+        return newError(`not a function: ${fn.type()}`);
+    }
+
+    const funct = <obj.Function>fn;
+
+    const extendedEnv = extendFunctionEnv(funct, args);
+    const evaluated = Eval(funct.body, extendedEnv);
+    return unwrapReturnValue(evaluated);
+}
+
+function extendFunctionEnv(fn: obj.Function, args: obj.Object[]): obj.Environment {
+    const env = obj.NewEnclosedEnvironment(fn.env);
+
+    fn.parameters.forEach((parm, idx) => {
+        env.set(parm.value, args[idx]);
+    });
+
+    return env;
+}
+
+function unwrapReturnValue(object: obj.Object): obj.Object {
+    if (object instanceof obj.ReturnValue) {
+        return ((<obj.ReturnValue>object).value);
+    }
+
+    return object;
 }

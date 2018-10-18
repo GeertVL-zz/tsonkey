@@ -164,6 +164,32 @@ test('let statements', () => {
     });
 });
 
+test('function object', () => {
+    const input = 'fn(x) { x + 2; }';
+
+    const evaluated = testEval(input);
+    expect(evaluated).toBeInstanceOf(obj.Function);
+    const fn = <obj.Function>evaluated;
+    expect(fn.parameters.length).toBe(1);
+    expect(fn.parameters[0].string()).toBe('x');
+    expect(fn.body.string()).toBe('(x + 2)');
+})
+
+test('function application', () => {
+    const tests = [
+        { input: 'let identity = fn(x) { x; }; identity(5);', expected: 5 }, 
+        { input: 'let identity = fn(x) { return x; }; identity(5);', expected: 5 }, 
+        { input: 'let double = fn(x) { x * 2; }; double(5);', expected: 10 }, 
+        { input: 'let add = fn(x, y) { x + y; }; add(5, 5);', expected: 10 }, 
+        { input: 'let add = fn(x, y) { x + y; }; add(5 + 5, add(5, 5));', expected: 20 }, 
+        { input: 'fn(x) { x; }(5)', expected: 5 },
+    ];
+
+    tests.forEach((tt) => {
+        testIntegerObject(testEval(tt.input), tt.expected);
+    });
+});
+
 function testEval(input: string): obj.Object {
     const l = new Lexer(input);
     const p = new Parser(l);

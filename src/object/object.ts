@@ -1,3 +1,5 @@
+import * as ast from '../ast/ast';
+
 type ObjectType = string;
 
 export enum ObjectTypeEnum {
@@ -6,6 +8,7 @@ export enum ObjectTypeEnum {
     NULL_OBJ = 'NULL',
     RETURN_VALUE_OBJ = 'RETURN_VALUE',
     ERROR_OBJ = 'ERROR',
+    FUNCTION_OBJ = 'FUNCTION',
 }
 
 export interface Object {
@@ -71,6 +74,41 @@ export class Error implements Object {
     }
 }
 
+export class Function implements Object {
+    parameters: ast.Identifier[];
+    body: ast.BlockStatement;
+    env: Environment;
+
+    inspect(): string {
+        let out: string = '';
+
+        let params: string[] = [];
+        this.parameters.forEach((p) => {
+            params.push(p.string());
+        });
+
+        out = out + 'fn';
+        out = out + '(';
+        out = out + params.join(', ');
+        out = out + ') {\n';
+        out = out + this.body.string();
+        out = out + '\n}';
+
+        return out;
+    }    
+
+    type(): ObjectType {
+        return ObjectTypeEnum.FUNCTION_OBJ;
+    }
+}
+
+export function NewEnclosedEnvironment(outer: Environment): Environment {
+    const env = NewEnvironment();
+    env.outer = outer;
+
+    return env;
+}
+
 export function NewEnvironment(): Environment {
     const ev = new Environment();
     ev.store = new Map();
@@ -79,9 +117,14 @@ export function NewEnvironment(): Environment {
 
 export class Environment {
     store: Map<string, Object>;
+    outer: Environment;
 
     get(name: string): [Object, boolean] {
         const value = this.store.get(name);
+        if (value === undefined && this.outer !== undefined) {
+            const outerValue = this.outer.get(name);
+            return outerValue;
+        }
 
         return [value, value !== undefined];
     }

@@ -1,4 +1,4 @@
-import { Token } from "../token/token";
+import { Token } from '../token/token';
 
 export interface Node {
     tokenLiteral(): string;
