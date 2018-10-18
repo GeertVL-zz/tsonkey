@@ -1,5 +1,5 @@
 import { Parser } from "./parser";
-import { Expression, IfExpression, IntegerLiteral, Identifier, PrefixExpression, InfixExpression, Bool, FunctionLiteral, CallExpression } from "../ast/ast";
+import { Expression, IfExpression, IntegerLiteral, Identifier, PrefixExpression, InfixExpression, Bool, FunctionLiteral, CallExpression, StringLiteral } from "../ast/ast";
 import { TokenEnum } from "../token/token";
 
 export enum PrecedenceEnum {
@@ -127,4 +127,8 @@ export function parseFunctionLiteral(p: Parser): Expression {
     lit.body = p.parseBlockStatement();
 
     return lit;
+}
+
+export function parseStringLiteral(p: Parser): Expression {
+    return Object.assign(new StringLiteral(), { token: p.curToken, value: p.curToken.Literal });
 }

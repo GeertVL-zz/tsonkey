@@ -1,9 +1,12 @@
 import * as ast from '../ast/ast';
 import * as obj from '../object/object';
+import * as bi from './builtins';
 
 export const TRUE = Object.assign(new obj.Bool(), { value: true });
 export const FALSE = Object.assign(new obj.Bool(), { value: false });
 export const NULL = new obj.Null();
+
+const builtinFunctions = bi.builtinFunctions;
 
 export function Eval(node: ast.Node, env: obj.Environment): obj.Object {
     if (node instanceof ast.Program) {
@@ -20,6 +23,10 @@ export function Eval(node: ast.Node, env: obj.Environment): obj.Object {
 
     if (node instanceof ast.IntegerLiteral) {
         return Object.assign(new obj.Integer(), { value: (<ast.IntegerLiteral>node).value });
+    }
+
+    if (node instanceof ast.StringLiteral) {
+        return Object.assign(new obj.String(), { value: node.value });
     }
 
     if (node instanceof ast.Bool) {
@@ -208,6 +215,10 @@ function evalInfixExpression(operator: string, left: obj.Object, right: obj.Obje
         return newError(`type mismatch: ${left.type()} ${operator} ${right.type()}`);
     }
 
+    if (left.type() === obj.ObjectTypeEnum.STRING_OBJ && right.type() === obj.ObjectTypeEnum.STRING_OBJ) {
+        return evalStringInfixExpression(operator, left, right);
+    }
+
     return newError(`unknown operator: ${left.type()} ${operator} ${right.type()}`);
 }
 
@@ -254,11 +265,16 @@ function evalIfExpression(ie: ast.IfExpression, env: obj.Environment): obj.Objec
 
 function evalIdentifier(node: ast.Identifier, env: obj.Environment): obj.Object {
     const value = env.get(node.value);
-    if (!value[1]) {
-        return newError(`identifier not found: ${node.value}`);
+    if (value[1]) {
+        return value[0];        
     }
 
-    return value[0];
+    const builtin = builtinFunctions.get(node.value);
+    if (builtin !== undefined) {
+        return builtin;
+    }
+
+    return newError(`identifier not found: ${node.value}`);
 }
 
 function evalExpressions(exps: ast.Expression[], env: obj.Environment): obj.Object[] {
@@ -276,6 +292,16 @@ function evalExpressions(exps: ast.Expression[], env: obj.Environment): obj.Obje
     return result;
 }
 
+function evalStringInfixExpression(operator: string, left: obj.Object, right: obj.Object): obj.Object {
+    if (operator !== '+') {
+        return newError(`unknown operator: ${left.type()} ${operator} ${right.type()}`);
+    }
+
+    const leftVal = (<obj.String>left).value;
+    const rightVal = (<obj.String>right).value;
+    return Object.assign(new obj.String(), { value: leftVal + rightVal });
+}
+
 function isTruthy(object: obj.Object): boolean {
     switch (object) {
         case NULL:
@@ -289,7 +315,7 @@ function isTruthy(object: obj.Object): boolean {
     }
 }
 
-function newError(message: string): obj.Error {
+export function newError(message: string): obj.Error {
     return Object.assign(new obj.Error(), { message: message });
 }
 
@@ -302,15 +328,19 @@ function isError(object: obj.Object): boolean {
 }
 
 function applyFunction(fn: obj.Object, args: obj.Object[]): obj.Object {
-    if (!(fn instanceof obj.Function)) {
-        return newError(`not a function: ${fn.type()}`);
+    if (fn instanceof obj.Function) {
+        const funct = <obj.Function>fn;
+        const extendedEnv = extendFunctionEnv(funct, args);
+        const evaluated = Eval(funct.body, extendedEnv);
+        return unwrapReturnValue(evaluated);
     }
 
-    const funct = <obj.Function>fn;
+    if (fn instanceof obj.Builtin) {
+        return fn.fn(...args);
+    }
 
-    const extendedEnv = extendFunctionEnv(funct, args);
-    const evaluated = Eval(funct.body, extendedEnv);
-    return unwrapReturnValue(evaluated);
+    return newError(`not a function: ${fn.type()}`);
+
 }
 
 function extendFunctionEnv(fn: obj.Function, args: obj.Object[]): obj.Environment {

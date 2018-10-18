@@ -32,7 +32,10 @@ test('next tokens', () => {
         x + y;
     };
     
-    let result = add(five, ten);`;
+    let result = add(five, ten);
+    "foobar"
+    "foo bar"
+    `;
 
     const tests = [
         { expectedType: TokenEnum.LET, expectedLiteral: 'let' },
@@ -71,6 +74,8 @@ test('next tokens', () => {
         { expectedType: TokenEnum.IDENT, expectedLiteral: 'ten' },
         { expectedType: TokenEnum.RPAREN, expectedLiteral: ')' },
         { expectedType: TokenEnum.SEMICOLON, expectedLiteral: ';' },
+        { expectedType: TokenEnum.STRING, expectedLiteral: "foobar" },
+        { expectedType: TokenEnum.STRING, expectedLiteral: "foo bar" },
         { expectedType: TokenEnum.EOF, expectedLiteral: '' },
     ];
 

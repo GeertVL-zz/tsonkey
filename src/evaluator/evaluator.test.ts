@@ -122,25 +122,25 @@ test('return statements', () => {
 
 test('error handling', () => {
     const tests = [
-        // { input: '5 + true;', expectedMessage: 'type mismatch: INTEGER + BOOLEAN' },
-        // { input: '5 + true; 5;', expectedMessage: 'type mismatch: INTEGER + BOOLEAN' },
-        // { input: '-true', expectedMessage: 'unknown operator: -BOOLEAN' },
-        // { input: 'true + false;', expectedMessage: 'unknown operator: BOOLEAN + BOOLEAN' },
-        // { input: '5; true + false; 5', expectedMessage: 'unknown operator: BOOLEAN + BOOLEAN' },
-        // { input: 'if (10 > 1) { true + false; }', expectedMessage: 'unknown operator: BOOLEAN + BOOLEAN' },
+        { input: '5 + true;', expectedMessage: 'type mismatch: INTEGER + BOOLEAN' },
+        { input: '5 + true; 5;', expectedMessage: 'type mismatch: INTEGER + BOOLEAN' },
+        { input: '-true', expectedMessage: 'unknown operator: -BOOLEAN' },
+        { input: 'true + false;', expectedMessage: 'unknown operator: BOOLEAN + BOOLEAN' },
+        { input: '5; true + false; 5', expectedMessage: 'unknown operator: BOOLEAN + BOOLEAN' },
+        { input: 'if (10 > 1) { true + false; }', expectedMessage: 'unknown operator: BOOLEAN + BOOLEAN' },
         { input: 'foobar', expectedMessage: 'identifier not found: foobar' },
-        // { 
-        //     input: ` 
-        //         if (10 > 1) { 
-        //             if (10 > 1) { 
-        //                 return true + false; 
-        //             }
-        //             133
-        //             return 1;
-        //         } 
-        //         `,
-        //     expectedMessage: 'unknown operator: BOOLEAN + BOOLEAN' 
-        // },    
+        { 
+            input: ` 
+                if (10 > 1) { 
+                    if (10 > 1) { 
+                        return true + false; 
+                    }
+                    133
+                    return 1;
+                } 
+                `,
+            expectedMessage: 'unknown operator: BOOLEAN + BOOLEAN' 
+        },    
     ];
 
     tests.forEach((tt) => {
@@ -188,6 +188,58 @@ test('function application', () => {
     tests.forEach((tt) => {
         testIntegerObject(testEval(tt.input), tt.expected);
     });
+});
+
+test('closures', () => {
+    const input = `
+        let newAdder = fn(x) {
+            fn(y) { x + y };
+        };
+
+        let addTwo = newAdder(2);
+        addTwo(2);
+    `;
+
+    testIntegerObject(testEval(input), 4);
+});
+
+test('string literal', () => {
+    const input = '"hello world!"';
+
+    const evaluated = testEval(input);
+    expect(evaluated).toBeInstanceOf(obj.String);
+    expect((<obj.String>evaluated).value).toBe('hello world!');
+});
+
+test('string concatenation', () => {
+    const input = `"hello" + " " + "world!"`;
+
+    const evaluated = testEval(input);
+    expect(evaluated).toBeInstanceOf(obj.String);
+    expect((<obj.String>evaluated).value).toBe('hello world!');
+});
+
+test('builtin functions', () => {
+    const tests = [
+        { input: `len("")`, expected: 0 }, 
+        { input: `len("four")`, expected: 4 }, 
+        { input: `len("hello world")`, expected: 11 }, 
+        { input: `len(1)`, expected: "argument to 'len' not supported, got INTEGER" }, 
+        { input: `len("one", "two")`, expected: "wrong number of arguments. got=2, want=1" },
+    ];
+
+    tests.forEach((tt) => {
+        const evaluated = testEval(tt.input);
+
+        if (typeof tt.expected === 'number') {
+            testIntegerObject(evaluated, tt.expected);
+        }
+
+        if (typeof tt.expected === 'string') {
+            expect(evaluated).toBeInstanceOf(obj.Error);
+            expect((<obj.Error>evaluated).message).toBe(tt.expected);
+        }
+    })
 });
 
 function testEval(input: string): obj.Object {

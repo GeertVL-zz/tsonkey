@@ -83,6 +83,10 @@ export class Lexer {
             case '}':
                 tok = { Type: TokenEnum.RBRACE, Literal: this.ch };
                 break;
+            case '"':
+                tok.Type = TokenEnum.STRING;
+                tok.Literal = this.readString();   
+                break; 
             case '\0':
                 tok = { Type: TokenEnum.EOF, Literal: '' };
                 break;
@@ -124,6 +128,18 @@ export class Lexer {
         const position = this.position;
         while (this.isDigit(this.ch)) {
             this.readChar();
+        }
+
+        return this.input.substring(position, this.position);
+    }
+
+    readString(): string {
+        let position = this.position + 1;
+        while (1 == 1) {
+            this.readChar();
+            if (this.ch === '"' || this.ch === '\0') {
+                break;
+            }
         }
 
         return this.input.substring(position, this.position);

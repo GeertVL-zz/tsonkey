@@ -2,6 +2,8 @@ import * as ast from '../ast/ast';
 
 type ObjectType = string;
 
+type BuiltInFunction = (...args: Object[]) => Object;
+
 export enum ObjectTypeEnum {
     INTEGER_OBJ = 'INTEGER',
     BOOLEAN_OBJ = 'BOOLEAN',
@@ -9,6 +11,8 @@ export enum ObjectTypeEnum {
     RETURN_VALUE_OBJ = 'RETURN_VALUE',
     ERROR_OBJ = 'ERROR',
     FUNCTION_OBJ = 'FUNCTION',
+    STRING_OBJ = 'STRING',
+    BUILTIN_OBJ = 'BUILTIN'
 }
 
 export interface Object {
@@ -99,6 +103,30 @@ export class Function implements Object {
 
     type(): ObjectType {
         return ObjectTypeEnum.FUNCTION_OBJ;
+    }
+}
+
+export class String implements Object {
+    value: string;
+
+    inspect(): string {
+        return this.value;
+    }
+
+    type(): ObjectType {
+        return ObjectTypeEnum.STRING_OBJ;
+    }
+}
+
+export class Builtin implements Object {
+    fn: BuiltInFunction;
+
+    inspect(): string {
+        return 'builtin function';
+    }
+
+    type(): ObjectType {
+        return ObjectTypeEnum.BUILTIN_OBJ;
     }
 }
 

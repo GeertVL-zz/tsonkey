@@ -303,3 +303,18 @@ export class CallExpression implements Expression {
         return out;
     }
 }
+
+export class StringLiteral implements Expression {
+    token: Token;
+    value: string;
+
+    expressionNode() {}
+
+    tokenLiteral(): string {
+        return this.token.Literal;
+    }
+
+    string(): string {
+        return this.token.Literal;
+    }
+}

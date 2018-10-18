@@ -1,6 +1,6 @@
 import { Lexer } from "../lexer/lexer";
 import { Parser } from "./parser";
-import { Statement, LetStatement, ReturnStatement, ExpressionStatement, Identifier, IntegerLiteral, Expression, PrefixExpression, InfixExpression, Bool, IfExpression, FunctionLiteral, CallExpression } from "../ast/ast";
+import { Statement, LetStatement, ReturnStatement, ExpressionStatement, Identifier, IntegerLiteral, Expression, PrefixExpression, InfixExpression, Bool, IfExpression, FunctionLiteral, CallExpression, StringLiteral } from "../ast/ast";
 
 test('let statements', () => {
     const tests = [
@@ -254,6 +254,21 @@ test('call expression parsing', () => {
     testLiteralExpression(exp.arguments[0], 1);
     testInfixExpression(exp.arguments[1], 2, '*', 3);
     testInfixExpression(exp.arguments[2], 4, '+', 5);
+});
+
+test('string literal expression', () => {
+    const input = '"hello world"';
+
+    const l = new Lexer(input);
+    const p = new Parser(l);
+    const program = p.parseProgram();
+    checkParserErrors(p);
+
+    expect(program.statements[0]).toBeInstanceOf(ExpressionStatement);
+    const stmt = <ExpressionStatement>program.statements[0];
+    expect(stmt.expression).toBeInstanceOf(StringLiteral);
+    const literal = <StringLiteral>stmt.expression;
+    expect(literal.value).toBe('hello world');
 });
 
 // helpers

@@ -41,7 +41,9 @@ export enum TokenEnum {
     RETURN = "RETURN",
 
     EQ = "==",
-    NOT_EQ = "!="
+    NOT_EQ = "!=",
+
+    STRING = "STRING"
 }
 
 export const keywords: Map<string, TokenEnum> = new Map(

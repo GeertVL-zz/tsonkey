@@ -50,6 +50,7 @@ export class Parser {
         this.registerPrefix(TokenEnum.LPAREN, helper.parseGroupedExpression);
         this.registerPrefix(TokenEnum.IF, helper.parseIfExpression);
         this.registerPrefix(TokenEnum.FUNCTION, helper.parseFunctionLiteral);
+        this.registerPrefix(TokenEnum.STRING, helper.parseStringLiteral);
 
         this.registerInfix(TokenEnum.PLUS, helper.parseInfixExpression);
         this.registerInfix(TokenEnum.MINUS, helper.parseInfixExpression);
